@@ -76,7 +76,7 @@ passport.deserializeUser(User.deserializeUser());
 ////
 
 
-httpServer.listen(8080,()=>{console.log("Server Started ✔");});
+httpServer.listen(4000,()=>{console.log("Server Started ✔");});
 app.use(express.json());
 
 //routers
