@@ -1,3 +1,6 @@
+import * as url from 'url';
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 import express from "express";
 import mongoose from "mongoose"
 import session from 'express-session'
