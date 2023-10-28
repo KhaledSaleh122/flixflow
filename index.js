@@ -36,7 +36,7 @@ function isLocalNetworkOrigin(origin) {
   }
   return false;
 }
-const allowedOrigins = ['http://localhost:5173',process.env.SERVERURL]; // Add the origins you want to allow
+const allowedOrigins = ['http://localhost:5173',process.env.SERVERURL,`${process.env.SERVERURL}:4000`,`${process.env.SERVERURL}:80`,`${process.env.SERVERURL}:8080`]; // Add the origins you want to allow
 
 const corsOptions = {
   origin: function (origin, callback) {
