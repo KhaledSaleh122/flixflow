@@ -109,5 +109,6 @@ app.get('/ping',(req,res)=>{
 })
 
 app.use(function(req, res, next) {
-    res.status(404).json({error:"_Resource not found."})
+  res.sendFile(__dirname+'/dist/index.html');
+    //res.status(404).json({error:"_Resource not found."})
 });
