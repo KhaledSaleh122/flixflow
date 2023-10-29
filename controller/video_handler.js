@@ -60,18 +60,22 @@ const serverFileDownloader = () =>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL);
         const fileText = response.data;
-        const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${fileURL}/${encrypt(url + content)}`) });
+        const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url)}/${encrypt(url + content)}`) });
         return convertedText;
     }
     info['serverTwo'] = async(fileURL,server)=>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL);
         const fileText = response.data;
-        const convertedText = fileText.replace(/(https)[^#]*/g, (match,content) => { return `/video/image/${server}/${fileURL}/${encrypt(match)}` });
+        const convertedText = fileText.replace(/(https)[^#]*/g, (match,content) => { return `/video/image/${server}/${encrypt(url)}/${encrypt(match)} 
+        ` });
         return convertedText;
     }
     return info
 }
+
+
+
 
 const downloadFile_handler = async(req,res) =>{
     try {
@@ -104,7 +108,7 @@ const serverImageDownloader = () =>{
         https.get(fileURL, async(respo) => {
             console.log(respo.statusCode);
             if(respo.statusCode && [403,404].find((el)=>el===respo.statusCode)){
-                console.log(await resetVideoData(decrypt(req.params.fileUrl)));
+                console.log(await resetVideoData(decrypt(file)));
             }
             respo.pipe(res);
         })
@@ -118,7 +122,7 @@ const downloadImage_handler = async(req,res) =>{
         if(!req.params.fileUrl){throw new Error('file is missing!')}
         const fileURL = decrypt(req.params.fileUrl);
         console.log(fileURL);
-        const file =await fileDownload.serverOne(fileURL,res,req.params.fileURl);
+        const file =await fileDownload.serverOne(fileURL,res,req.params.filex);
     } catch (error) {
         console.log(error);
         res.status(500).json({error:"Error getting file,restart the page!"})
