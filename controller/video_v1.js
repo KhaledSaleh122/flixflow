@@ -120,7 +120,7 @@ async function getVideo(info) {
                 
                 
                 const page = await browser.newPage();
-                await page.goto('http://localhost:8080/', { waitUntil: 'domcontentloaded' });
+                await page.goto('http://localhost:4000/', { waitUntil: 'domcontentloaded' });
                 
                 const waiting = await page.evaluate(async (type, id, s, e, server) => {
                     return await new Promise((reslove, reject) => {
@@ -140,7 +140,7 @@ async function getVideo(info) {
                 let reqData;
                 const getDataInterval = setInterval(async()=>{
                     let infoPage = await browser.newPage();
-                    await infoPage.goto('http://localhost:8080');
+                    await infoPage.goto('http://localhost:4000');
                     reqData = await infoPage.evaluate(el => localStorage.getItem('data'));
                     await infoPage.close();
                     if (reqData) {

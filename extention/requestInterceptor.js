@@ -12,7 +12,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }else if(message.type =="check_url"){
     console.log(dataSaved);
     console.log()
-    if((dataSaved.url && dataSaved.url.indexOf(message.data.location) >= 0) || message.data.fullLocation==="http://localhost:8080/s"){
+    if((dataSaved.url && dataSaved.url.indexOf(message.data.location) >= 0) || message.data.fullLocation==="http://localhost:4000/s"){
       chrome.tabs.query({}, function (tabs) {
         console.log('ready_to_start');
         chrome.tabs.sendMessage(tabs[0].id, {type:"ready_to_start",data:dataSaved});
