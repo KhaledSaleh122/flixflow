@@ -22,6 +22,8 @@ const serverListDownloader = () =>{
     }
     return info
 }
+
+
 const downloadList_handler = async(req,res) =>{
     try {
         const ListDownload = serverListDownloader();
@@ -64,7 +66,7 @@ const serverFileDownloader = () =>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL);
         const fileText = response.data;
-        const convertedText = fileText.replace(/https[^#]*/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
+        const convertedText = fileText.replace(/(https)[^#]*/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
         return convertedText;
     }
     return info
