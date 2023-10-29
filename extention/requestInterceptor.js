@@ -84,7 +84,7 @@ const tabHandler = () =>{
         chrome.tabs.update(tabs[0].id, 
           { 
            // url: `${url}/${data.type}/${data.id}${data.type==='tv'?`/${data.s}/${data.e}`:''}`,
-           url: `http://localhost:8080/s`,
+           url: `http://localhost:4000/s`,
           }
         );
     })
@@ -96,7 +96,7 @@ const tabHandler = () =>{
       dataSaved.url = `${url}/${data.type==='tv'?`embedtv/${data.id}?s=${data.s}&e=${data.e}`:`embed/${data.id}`}`
       chrome.tabs.update(tabs[0].id, 
         { 
-          url: `http://localhost:8080/s`,
+          url: `http://localhost:4000/s`,
         }
       );
     })
