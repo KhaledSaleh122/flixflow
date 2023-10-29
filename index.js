@@ -30,7 +30,7 @@ const httpServer =  createServer(app);
 app.use(limiter);
 app.use(cookieParser());
 app.set('trust proxy', true);
-app.set('trust proxy', process.env.SERVERURL.split('//')[1]);
+app.set('trust proxy', process.env.SERVERIP);
 function isLocalNetworkOrigin(origin) {
   if (origin && origin.startsWith('http://192.168.1.')) {
     return true;
