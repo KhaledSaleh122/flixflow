@@ -17,7 +17,7 @@ const serverListDownloader = () =>{
         const url = listURL.substring(0,listURL.lastIndexOf('/')+1);
         const response = await axios.get(listURL);
         const listText = response.data;
-        const convertedText = listText.replace(/(index-f|iframes-f)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(url + match)}`});
+        const convertedText = listText.replace(/(index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(url + match)}`});
         return convertedText;
     }
     return info
@@ -64,8 +64,8 @@ const serverFileDownloader = () =>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL);
         const fileText = response.data;
-        //const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
-        return fileText;
+        const convertedText = fileText.replace(/https[^#]*/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
+        return convertedText;
     }
     return info
 }
