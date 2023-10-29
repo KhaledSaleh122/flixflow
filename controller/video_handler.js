@@ -23,7 +23,41 @@ const serverListDownloader = () =>{
     return info
 }
 
+const x = `
 
+#EXTM3U
+#EXT-X-TARGETDURATION:10
+#EXT-X-ALLOW-CACHE:YES
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXT-X-VERSION:3
+#EXT-X-MEDIA-SEQUENCE:1
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-1-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-2-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-3-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-4-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-5-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-6-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-7-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-8-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-9-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-10-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-11-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949
+#EXTINF:10.010,
+
+`
+
+console.log(x.replace(/(https)[^#]*/g, (match,content) => { return `/video/image/${1}/${encrypt('123123' + content)}`}));
 const downloadList_handler = async(req,res) =>{
     try {
         const ListDownload = serverListDownloader();
@@ -66,7 +100,7 @@ const serverFileDownloader = () =>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL);
         const fileText = response.data;
-        const convertedText = fileText.replace(/(https)[^#]*/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
+        const convertedText = fileText.replace(/(https)[^#]*/g, (match,content) => { return `/video/image/${server}/${encrypt(url + content)}` });
         return convertedText;
     }
     return info
