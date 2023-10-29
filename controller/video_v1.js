@@ -221,7 +221,6 @@ async function createBrowser() {
         '--remote-debugging-port=4003',
         '--disable-setuid-sandbox',
         '--no-sandbox',
-        '--user-data-dir="D:/temp"',
         '--disable-web-security',
         '--disable-site-isolation-trials',
         `--load-extension=${__dirname + '/../extention/'},${__dirname + '/../ublock/'}`,
