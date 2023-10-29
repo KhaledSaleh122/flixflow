@@ -106,7 +106,7 @@ const serverImageDownloader = () =>{
     const info = {};
     info['serverOne'] = async(fileURL,res,file)=>{
         https.get(fileURL, async(respo) => {
-            console.log(respo.statusCode);
+            //console.log(respo.statusCode);
             if(respo.statusCode && [403,404].find((el)=>el===respo.statusCode)){
                 console.log(await resetVideoData(decrypt(file)));
             }
@@ -121,7 +121,7 @@ const downloadImage_handler = async(req,res) =>{
         const fileDownload = serverImageDownloader();
         if(!req.params.fileUrl){throw new Error('file is missing!')}
         const fileURL = decrypt(req.params.fileUrl);
-        console.log(fileURL);
+        //console.log(fileURL);
         const file =await fileDownload.serverOne(fileURL,res,req.params.filex);
     } catch (error) {
         console.log(error);

@@ -57,8 +57,7 @@ export async function getTargetVideo(req, res) {
         }
         //console.log(data);
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: "Couldn't find source video, Try again later!", statusCode: 500 });
+        res.status(500).json({ error: "Couldn't find source video, Try again!", statusCode: 500 });
     }
 }
 async function saveData(info,data){
@@ -234,6 +233,7 @@ async function createBrowser() {
             executablePath: process.env.GOOGLEPATH,
             ignoreHTTPSErrors: false,
             headless: 'new',
+            protocolTimeout: 30000,
             //devtools:true,
             //headless: false,
             args,
