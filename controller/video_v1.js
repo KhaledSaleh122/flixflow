@@ -229,9 +229,9 @@ async function createBrowser() {
         {
             executablePath: process.env.GOOGLEPATH,
             ignoreHTTPSErrors: false,
-            //headless: 'new',
+            headless: 'new',
             //devtools:true,
-            headless: false,
+            //headless: false,
             args,
         }
     )
