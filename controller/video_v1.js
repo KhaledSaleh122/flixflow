@@ -20,7 +20,6 @@ import { getIMDB, getTvShowById } from './tv.js';
 import { VideoModel } from '../model/video.js';
 import { Sub } from '../model/subtitle.js';
 import { decrypt, encrypt } from './video_handler.js';
-import axios from 'axios';
 
 export async function getTargetVideo(req, res) {
     try {
@@ -57,6 +56,7 @@ export async function getTargetVideo(req, res) {
         }
         //console.log(data);
     } catch (error) {
+        console.log(error);
         res.status(500).json({ error: "Couldn't find source video, Try again!", statusCode: 500 });
     }
 }
@@ -93,11 +93,7 @@ const serversHandler = () => {
     info['serverOne'] = async (data, info) => {
         const dataToReturn = {subtitle:[]};
         if (data['subtitle']) {
-            try {
-                dataToReturn['subtitle'] = (await axios.get(data['subtitle'])).data;
-            } catch (error) {
-                
-            }
+            dataToReturn['subtitle'] = await (await fetch(data['subtitle'])).json();
         }
         return dataToReturn;
     }
@@ -220,6 +216,7 @@ async function createBrowser() {
         '--remote-debugging-port=4003',
         '--disable-setuid-sandbox',
         '--no-sandbox',
+        '--user-data-dir="D:/temp"',
         '--disable-web-security',
         '--disable-site-isolation-trials',
         `--load-extension=${__dirname + '/../extention/'},${__dirname + '/../ublock/'}`,
@@ -232,10 +229,9 @@ async function createBrowser() {
         {
             executablePath: process.env.GOOGLEPATH,
             ignoreHTTPSErrors: false,
-            headless: 'new',
-            protocolTimeout: 30000,
+            //headless: 'new',
             //devtools:true,
-            //headless: false,
+            headless: false,
             args,
         }
     )

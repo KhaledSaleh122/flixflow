@@ -1,6 +1,3 @@
-import * as url from 'url';
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 import express from "express";
 import mongoose from "mongoose"
 import session from 'express-session'
@@ -37,7 +34,7 @@ function isLocalNetworkOrigin(origin) {
   }
   return false;
 }
-const allowedOrigins = ['http://localhost:5173',process.env.SERVERURL,`${process.env.SERVERURL}:4000`,`${process.env.SERVERURL}:80`,`${process.env.SERVERURL}:8080`]; // Add the origins you want to allow
+const allowedOrigins = ['http://localhost:5173',`${process.env.SERVERURL}:5173`,process.env.SERVERURL,`${process.env.SERVERURL}:4000`,`${process.env.SERVERURL}:80`,`${process.env.SERVERURL}:8080`]; // Add the origins you want to allow
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -113,6 +110,5 @@ app.get('/ping',(req,res)=>{
 })
 
 app.use(function(req, res, next) {
-  res.sendFile(__dirname+'/dist/index.html');
-    //res.status(404).json({error:"_Resource not found."})
+    res.status(404).json({error:"_Resource not found."})
 });

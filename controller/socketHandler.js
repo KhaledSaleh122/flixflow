@@ -12,7 +12,7 @@ export default function socketScript(server) {
   const io = new Server(server, {
     cookie: true,
     cors: {
-      origin: process.env.SERVERURL, // Replace with your domain
+      origin: `${process.env.SERVERURL}:${process.env.port}`, // Replace with your domain
       methods: ['GET', 'POST'],
       credentials: true,
 
@@ -38,17 +38,13 @@ export default function socketScript(server) {
   });
   const collectReadyHandler = (socket) => {
     socket.on('collect_can_play', (info) => {
-      try {
-        if (socket.user && socket.user._id) {
-          limitRequests(socket.user._id, socket);
-          const room = io.sockets.adapter.rooms.get(socket.roomId);
-          const numUsersInRoom = room ? room.size : 0;
-          io.to(socket.roomId).emit('new_video_stat_check_all_ready', { id: info.id, users: numUsersInRoom });
-        } else {
-          disconnectUser();
-        }
-      } catch (error) {
-        socket.emit('message', { data: "Error happend while using room [5]", redirect: true });
+      if (socket.user && socket.user._id) {
+        limitRequests(socket.user._id, socket);
+        const room = io.sockets.adapter.rooms.get(socket.roomId);
+        const numUsersInRoom = room ? room.size : 0;
+        io.to(socket.roomId).emit('new_video_stat_check_all_ready', { id: info.id, users: numUsersInRoom });
+      } else {
+        disconnectUser();
       }
     })
   }
@@ -67,25 +63,17 @@ export default function socketScript(server) {
   }
   const videoStatHandler = (socket) => {
     socket.on('change_video_stat', (info) => {
-      try {
-        if (!socket.user || !socket.user._id) { disconnectedHandler(socket, "NOT AUTH"); }
-        limitRequests(socket.user._id, socket);
-        //console.log(info);
-        io.to(socket.roomId).emit('new_video_stat', info)
-      } catch (error) {
-        socket.emit('message', { data: "Error happend while using room [2]", redirect: true });
-      }
+      if (!socket.user || !socket.user._id) { disconnectedHandler(socket, "NOT AUTH"); }
+      limitRequests(socket.user._id, socket);
+      //console.log(info);
+      io.to(socket.roomId).emit('new_video_stat', info)
     })
   }
   const disconnectedHandler = (socket, msg) => {
     socket.on('disconnect', () => {
-      try {
-        if(socket.user && socket.user._id && (emitCounts[socket.user._id] && emitCounts[socket.user._id].socketId === socket.id)){
-          emitCounts[socket.user._id] = null;
-        }
-        console.log('user disconnected');
-      } catch (error) {
-        socket.emit('message', { data: "Error happend while using room [1]", redirect: true });
+      console.log('user disconnected');
+      if(socket.user && socket.user._id && emitCounts[socket.user._id].socketId === socket.id){
+        emitCounts[socket.user._id] = null;
       }
     })
   }
@@ -93,43 +81,35 @@ export default function socketScript(server) {
 
   const addUserTOroom = (socket) => {
     socket.on('add_user_to_room', (info) => {
-      try {
-        if (socket.user && socket.user._id) {
-          limitRequests(socket.user._id, socket);
-          if (socket.roomId) { console.log('already connected to room'); return; }
-          //console.log(info.data);
-          socket.join(info.data);
-          socket.roomId = info.data;
-          if(!info.guest && info.type){
-            const newdata = {id:info.tmdb_id,season:info.season,episode:info.episode,type:info.type};
-            if(!rooms[socket.roomId] || (rooms[socket.roomId].id !== info.id)){
-              io.to(socket.roomId).emit('recevid_data',newdata);
-            }
-            rooms[socket.roomId] = newdata;
+      //console.log(socket.user);
+      if (socket.user && socket.user._id) {
+        limitRequests(socket.user._id, socket);
+        if (socket.roomId) { console.log('already connected to room'); return; }
+        //console.log(info.data);
+        socket.join(info.data);
+        socket.roomId = info.data;
+        if(!info.guest && info.type){
+          const newdata = {id:info.tmdb_id,season:info.season,episode:info.episode,type:info.type};
+          if(!rooms[socket.roomId] || (rooms[socket.roomId].id !== info.id)){
+            io.to(socket.roomId).emit('recevid_data',newdata);
           }
-          console.log('user belong to room ' + socket.roomId);
-          socket.emit('room_check', { result: true });
-        } else {
-          disconnectUser();
+          rooms[socket.roomId] = newdata;
         }
-      } catch (error) {
-        socket.emit('message', { data: "Error happend while using room [3]", redirect: true });
+        console.log('user belong to room ' + socket.roomId);
+        socket.emit('room_check', { result: true });
+      } else {
+        disconnectUser();
       }
-    
     })
   }
 
   const checkAuthin = async (socket) => {
     socket.on("Auth_check", (auth) => {
-      try {
-              //console.log(auth);
+      //console.log(auth);
       if (!auth.islogedIn) { socket.emit('Auth_check', { result: false }); disconnectUser(); return; }
       socket.user = auth.user;
       socket.emit('Auth_check', { result: true });
       limiterHandler(socket);
-      } catch (error) {
-        socket.emit('message', { data: "Error happend while using room [4]", redirect: true });
-      }
     })
   }
 

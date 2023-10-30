@@ -4,7 +4,6 @@ import dotenv from 'dotenv'
 import { json } from 'express';
 import https from 'https'
 import { resetVideoData } from './video_v1.js';
-//console.log(await axios.get('https://loff7zr5.sw-cdnstream.com/hls2/01/00738/ni7zmmqcnust_h/seg-11-v1-a1.ts?t=6noG3sN8Lc-8Tp641Km0TJ3OP79no_pAMhNQJq74Xac&s=1698540295&e=129600&f=3693920&srv=ejjkmxupvsar&i=0.4&sp=500&p1=ejjkmxupvsar&p2=ejjkmxupvsar&asn=63949'));
 const serverListDownloader = () =>{
     const info = {};
     info['serverOne'] = async(listURL,server)=>{
@@ -18,13 +17,11 @@ const serverListDownloader = () =>{
         const url = listURL.substring(0,listURL.lastIndexOf('/')+1);
         const response = await axios.get(listURL);
         const listText = response.data;
-        const convertedText = listText.replace(/(index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(url + match)}`});
+        const convertedText = listText.replace(/(index-f|iframes-f)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(url + match)}`});
         return convertedText;
     }
     return info
 }
-
-
 const downloadList_handler = async(req,res) =>{
     try {
         const ListDownload = serverListDownloader();
@@ -60,22 +57,18 @@ const serverFileDownloader = () =>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL);
         const fileText = response.data;
-        const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url)}/${encrypt(url + content)}`) });
+        const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
         return convertedText;
     }
     info['serverTwo'] = async(fileURL,server)=>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL);
         const fileText = response.data;
-        const convertedText = fileText.replace(/(https)[^#]*/g, (match,content) => { return `/video/image/${server}/${encrypt(url)}/${encrypt(match)} 
-        ` });
-        return convertedText;
+        //const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
+        return fileText;
     }
     return info
 }
-
-
-
 
 const downloadFile_handler = async(req,res) =>{
     try {
@@ -104,12 +97,8 @@ const downloadFile_handler = async(req,res) =>{
 
 const serverImageDownloader = () =>{
     const info = {};
-    info['serverOne'] = async(fileURL,res,file)=>{
-        https.get(fileURL, async(respo) => {
-            //console.log(respo.statusCode);
-            if(respo.statusCode && [403,404].find((el)=>el===respo.statusCode)){
-                console.log(await resetVideoData(decrypt(file)));
-            }
+    info['serverOne'] = async(fileURL,res)=>{
+        https.get(fileURL, (respo) => {
             respo.pipe(res);
         })
     }
@@ -121,8 +110,7 @@ const downloadImage_handler = async(req,res) =>{
         const fileDownload = serverImageDownloader();
         if(!req.params.fileUrl){throw new Error('file is missing!')}
         const fileURL = decrypt(req.params.fileUrl);
-        //console.log(fileURL);
-        const file =await fileDownload.serverOne(fileURL,res,req.params.filex);
+        const file =await fileDownload.serverOne(fileURL,res);
     } catch (error) {
         console.log(error);
         res.status(500).json({error:"Error getting file,restart the page!"})

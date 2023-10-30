@@ -76,11 +76,11 @@ const startHandler = () => {
           newIframe.style.height='400px';
           newIframe.style.width='400px';
           document.body.append(newIframe);
-        //   setTimeout(()=>{
-        //     if(b){
-        //         window.location.reload();
-        //     }
-        //   },10000)
+          setTimeout(()=>{
+            if(b){
+                window.location.reload();
+            }
+          },10000)
           newIframe.addEventListener('load',function(){b=false;frameLoaded()});
     }
     return info;

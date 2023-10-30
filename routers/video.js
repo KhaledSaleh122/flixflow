@@ -19,9 +19,9 @@ videoRouter.get('/tv/:tmdbId/:server/:season/:episode',
     param('server').exists().isInt({min:1,max:2}).toInt()
 ],validateResultMiddleware,(req,res,next)=>{req.params.type = 'tv';next();},isVideoInfoExists,getTargetVideo);
 
-videoRouter.get('/image/:server/:filex/:fileUrl', [param('fileUrl').exists().isString(),param('server').exists().isInt().toInt()], validateResultMiddleware,downloadImage_handler)
 videoRouter.get('/list/:server/:fileUrl', [param('fileUrl').exists().isString(),param('server').exists().isInt().toInt()], validateResultMiddleware,downloadList_handler)
 videoRouter.get('/file/:server/:fileUrl', [param('fileUrl').exists().isString(),param('server').exists().isInt().toInt()], validateResultMiddleware,downloadFile_handler)
+videoRouter.get('/image/:server/:fileUrl', [param('fileUrl').exists().isString(),param('server').exists().isInt().toInt()], validateResultMiddleware,downloadImage_handler)
 
 videoRouter.delete('/reset',resetVideoData)
 
