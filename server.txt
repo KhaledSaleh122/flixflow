@@ -1,0 +1,12 @@
+
+MONGODB_LINK=mongodb://127.0.0.1/fraka
+SECRET=Everyone has a sercret they should not tell anyone about it
+TMDB_API=6b2dec73b6697866a50cdaef60ccffcb
+GOOGLEPATH=/usr/bin/google-chrome
+SEC=23cfe8354123edea381f882772845441f20b02519d19e4e31c800350ad9bae81
+iv=67fc581dd04fd3217b4d730a2cf859ae
+SERVERURL = https://flixflow.art
+SERVERIP = 172.104.248.108
+VITE_SERVERURL = https://flixflow.art
+port = 4000
+
