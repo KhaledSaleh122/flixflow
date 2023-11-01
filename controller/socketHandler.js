@@ -51,12 +51,14 @@ export default function socketScript(server) {
   const limiterHandler = (socket) => {
     if (!emitCounts[socket.user._id]) {
       emitCounts[socket.user._id] = {
+        name : socket.user.username,
         count: 0,
         timestamp: Date.now(),
         socketId: socket.id
       };
       addUserTOroom(socket);
     } else {
+      io.to(emitCounts[socket.user._id].socketId).emit('message', { data: "You already connected to other room, You will be redirected to home.", redirect: true });
       socket.emit('message', { data: "You already connected to other room, You will be redirected to home.", redirect: true });
       //addUserTOroom(socket);
     }
@@ -72,7 +74,14 @@ export default function socketScript(server) {
   const disconnectedHandler = (socket, msg) => {
     socket.on('disconnect', () => {
       console.log('user disconnected');
-      if(socket.user && socket.user._id && emitCounts[socket.user._id].socketId === socket.id){
+      updateRoomUser(socket);
+      if(socket && socket.roomId ){
+        const room = io.sockets.adapter.rooms.get(socket.roomId);
+        if(room && room.size <= 0){
+          rooms[socket.roomId] = null;
+        }
+      }
+      if(socket.user && socket.user._id && emitCounts[socket.user._id] && emitCounts[socket.user._id].socketId === socket.id){
         emitCounts[socket.user._id] = null;
       }
     })
@@ -95,6 +104,7 @@ export default function socketScript(server) {
           }
           rooms[socket.roomId] = newdata;
         }
+        updateRoomUser(socket);
         console.log('user belong to room ' + socket.roomId);
         socket.emit('room_check', { result: true });
       } else {
@@ -102,7 +112,20 @@ export default function socketScript(server) {
       }
     })
   }
-
+  const updateRoomUser = (socket)=>{
+    const room = io.sockets.adapter.rooms.get(socket.roomId);
+    if(!room){return;}
+    io.to(socket.roomId).emit('update_room_users', { data: Array.from(room).map((el)=>{
+      let userInfo;
+      Object.entries(emitCounts).forEach(([key,val])=>{
+          if(val.socketId === el){
+            userInfo = {id : key,name:val.name};
+          }
+      })
+      if(!userInfo){return {name:'unkowen'}}
+      return userInfo;
+    }) });
+  }
   const checkAuthin = async (socket) => {
     socket.on("Auth_check", (auth) => {
       //console.log(auth);

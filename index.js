@@ -9,6 +9,11 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { createServer } from "http";
 import rateLimit from 'express-rate-limit'
+////
+import * as url from 'url';
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
+/////
 const MongoStore = connectMongo(session);
 
 //MongoDB connection
@@ -110,5 +115,6 @@ app.get('/ping',(req,res)=>{
 })
 
 app.use(function(req, res, next) {
-    res.status(404).json({error:"_Resource not found."})
+    res.sendFile(__dirname+'/dist/index.html');
+    //res.status(404).json({error:"_Resource not found."})
 });
