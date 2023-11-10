@@ -6,8 +6,9 @@ export const subRouter = express.Router();
 import https from 'https'
 import { decrypt } from '../controller/video_handler.js';
 import srt2vtt from 'srt-to-vtt'
-import unzipper from 'unzipper';
-
+import zlib from 'zlib';
+import { Readable } from 'stream';
+import iconv from 'iconv-lite';
 subRouter.get('/file/:fileUrl',[param('fileUrl').exists().isString()],validateResultMiddleware,
 (req,res)=>{
     //console.log(req.params.fileUrl);
@@ -16,7 +17,7 @@ subRouter.get('/file/:fileUrl',[param('fileUrl').exists().isString()],validateRe
     })
 })
 
-subRouter.get('/v2/file/:fileUrl/:index',[param('fileUrl').exists().isString(),param('index').exists().isInt().toInt()],validateResultMiddleware,async(req,res)=>{
+subRouter.get('/v2/file/:fileUrl/:id',[param('fileUrl').exists().isString(),param('id').exists().isString()],validateResultMiddleware,async(req,res)=>{
     try {
         const fileUrl = decrypt(req.params.fileUrl);
         const response = await fetch(fileUrl);
@@ -24,21 +25,50 @@ subRouter.get('/v2/file/:fileUrl/:index',[param('fileUrl').exists().isString(),p
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const arrayBuffer = await response.arrayBuffer();
-        let index = req.params.index || 0;
-        let counter = 0;
+        /*
         await unzipper.Open.buffer(Buffer.from(arrayBuffer))
         .then(zip => {
           zip.files.forEach(entry => {
+            console.log(entry);
             if (entry.type === 'File' && (entry.path.endsWith('.srt') ||entry.path.endsWith('.vtt')) && (counter === index || index === 17)) {
                 const stream = entry.stream();
                 if(entry.path.endsWith('.srt')){
                     stream.pipe(srt2vtt()).pipe(res);
                 }else{
+                    stream.pipe(res);
                 }
             }
             counter++;
           });
         });
+        */
+        zlib.gunzip(arrayBuffer, (err, decompressedData) => {
+            if (err) {
+              console.error('Error decompressing the gzipped file:', err);
+              return;
+            }
+            // Convert the decompressed buffer to a string
+           // console.log(fileUrl);
+            let srtContent;
+            if(req.params.id ==="ara"){
+                srtContent = iconv.decode(decompressedData, 'windows-1256');
+            }else{
+                srtContent = iconv.decode(decompressedData, 'utf-8');
+            }
+            //console.log(srtContent);
+           // res.send(srtContent);
+            
+            const readableStream = new Readable();
+            readableStream.push(srtContent);
+            readableStream.push(null);
+            // Set the response headers
+            res.setHeader('Content-Type', 'text/vtt; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename="converted.vtt"');
+      
+            // Send the converted VTT content as the response
+            readableStream.pipe(srt2vtt()).pipe(res);
+            
+          });
     } catch (error) {
         console.log(error);
         res.status(500).json({error});

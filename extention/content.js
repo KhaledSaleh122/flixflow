@@ -88,6 +88,7 @@ const startHandler = () => {
 
 //newIframe.addEventListener('load',frameLoaded);
 let noRestart = false;
+let iX = 1;
 const frameLoaded = () =>{
     clickInMiddleOfAllIframes(document,'');
 }
@@ -118,13 +119,27 @@ function clickInMiddleOfAllIframes(doc,id) {
       clientY: middleY,
     });
     const element = iframeDocument.elementFromPoint(middleX, middleY);
-    iframeDocument.elementFromPoint(middleX, middleY).dispatchEvent(clickEvent);
-    if( (iframeDocument.querySelector('video')|| (id && iframeDocument.querySelector('#'+id)) ) && !noRestart){
-        iframeDocument.querySelector('video').currentTime=40;
-        const message = { type: 'close_the_page'};
-        chrome.runtime.sendMessage(message);
-        noRestart = true;
-    }else if (!noRestart){
+    if(element){
+        iframeDocument.elementFromPoint(middleX, middleY).dispatchEvent(clickEvent);
+        if( (iframeDocument.querySelector('video')|| (id && iframeDocument.querySelector('#'+id)) ) && !noRestart){
+            iframeDocument.querySelector('video').currentTime=40;
+            setInterval(()=>{
+                const element = iframeDocument.elementFromPoint(middleX, middleY);
+                if(element && iframeDocument.querySelector('video').paused){
+                  iframeDocument.elementFromPoint(middleX, middleY).dispatchEvent(clickEvent);
+                }
+                if(!iframeDocument.querySelector('video').paused){
+                    const message = { type: 'close_the_page'};
+                    chrome.runtime.sendMessage(message);
+                }
+            },500);
+            noRestart = true;
+        }else if (!noRestart){
+            setTimeout(()=>{
+                clickInMiddleOfAllIframes(document,id);
+            },500);
+        }
+    }else if(!noRestart){
         setTimeout(()=>{
             clickInMiddleOfAllIframes(document,id);
         },500);
@@ -134,6 +149,7 @@ function clickInMiddleOfAllIframes(doc,id) {
 async function check_url() {
     const message = { type: 'check_url', data: { location: window.location.host ,fullLocation:window.location.href} };
     chrome.runtime.sendMessage(message);
+    //console.log(await fetch(`https://rest.opensubtitles.org/search/imdbid-0068646`));
 }
 
 check_url();

@@ -6,7 +6,7 @@ export const subtitleSchema = new mongoose.Schema({
     episode : {type : Number,default : 0},
     season : {type : Number,default : 0},
     data : Object,
-    lang:String
+    expireAt: { type: Date,expires: 3600}
 });
 
 

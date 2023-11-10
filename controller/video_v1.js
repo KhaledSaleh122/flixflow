@@ -45,7 +45,21 @@ export async function getTargetVideo(req, res) {
             }
             case 2:{
                 data = await getVideo(info);
-                if (!data.list) { throw 'couldn\'t find the target :: 3' }
+                if (!data.list) { throw 'couldn\'t find the target :: 6' }
+                saveData(info,data);
+                res.status(200).json({list:encrypt(data.list)});
+                break;
+            }
+            case 3:{
+                data = await getVideo(info);
+                if (!data.list) { throw 'couldn\'t find the target :: 5' }
+                saveData(info,data);
+                res.status(200).json({list:encrypt(data.list)});
+                break;
+            }
+            case 4:{
+                data = await getVideo(info);
+                if (!data.list) { throw 'couldn\'t find the target :: 5' }
                 saveData(info,data);
                 res.status(200).json({list:encrypt(data.list)});
                 break;
@@ -74,7 +88,7 @@ async function saveData(info,data){
     ).exec();
 }
 async function sendVideoError(info) {
-    console.log(info);
+    //console.log(info);
     await VideoModel.findOneAndUpdate({ tmdbId: info.id, season: (info.season || 0), episode: (info.episode || 0), server: info.server },
         {
             error: "We Dont Have resource for this now come back later",
@@ -111,17 +125,23 @@ async function getVideo(info) {
                     counterBrowsers--;
                     reject('couldn\'t find the target :: 2');
                     //sendVideoError(info);
-                }, 20000)
-                
+                }, 40000 )
+                let imdb;
+                if (info.type === 'tv') {
+                    imdb = (await getIMDB(info.id)).result;
+                } else {
+                    imdb = (await getIMDB_M(info.id)).result;
+                }
                 
                 const page = await browser.newPage();
                 await page.goto('http://localhost:4000/', { waitUntil: 'domcontentloaded' });
                 
-                const waiting = await page.evaluate(async (type, id, s, e, server) => {
+                const waiting = await page.evaluate(async (type, id, s, e, server,imdb) => {
                     return await new Promise((reslove, reject) => {
-                        const info = { type, id, s, e, server }
+                        const info = { type, id, s, e, server,imdb }
                         window.postMessage({ type: 'data_from_web', data: info }, '*');
                         //setInterval(() => console.log('still here'), 1000);
+                        reslove('done');
                         window.addEventListener('message', function (event) {
                             if (event.data.type === "close_the_page") {
                                 reslove('done');
@@ -129,12 +149,19 @@ async function getVideo(info) {
                             }
                         });
                     })
-                }, info.type, info.id, info.season, info.episode, info.server);
+                }, info.type, info.id, info.season, info.episode, info.server,imdb);
                 
                 await page.close();
                 let reqData;
                 const getDataInterval = setInterval(async()=>{
-                    let infoPage = await browser.newPage();
+                    if(!browser.isConnected){clearInterval(getDataInterval);return;}
+                    let infoPage;
+                    try {
+                        infoPage = await browser.newPage();
+                    } catch (error) {
+                        clearInterval(getDataInterval);
+                        return;
+                    }
                     await infoPage.goto('http://localhost:4000');
                     reqData = await infoPage.evaluate(el => localStorage.getItem('data'));
                     await infoPage.close();
@@ -147,7 +174,8 @@ async function getVideo(info) {
                         resolve(JSON.parse(reqData));
                         return;
                     }
-                },1500);  
+                },3000);
+            
             } catch (error) {
                 if (browser) { await browser.close() };
                 reject(error);
@@ -229,9 +257,9 @@ async function createBrowser() {
         {
             executablePath: process.env.GOOGLEPATH,
             ignoreHTTPSErrors: false,
-            headless: 'new',
+            //headless: 'new',
             //devtools:true,
-            //headless: false,
+            headless: false,
             args,
         }
     )
@@ -268,7 +296,7 @@ export async function isVideoInfoExists(req, res, next) {
         if (videoInfo.subtitle) { videoInfo.subtitle.map((el) => { el.file = encrypt(el.file); return el }) };
         res.status(200).json(videoInfo);
     } catch (err) {
-        console.log(err);
+        //console.log(err);
         res.status(err.statusCode || 500).json({ error: err.toString(), statusCode: err.statusCode || 500 });
     }
 }
@@ -288,14 +316,31 @@ export async function resetVideoData(list) {
 
 //////////////////////subtitle
 
-
+const subHeaders = {
+  'Accept': 'application/json, text/javascript, */*; q=0.01',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'Accept-Language': 'ar,en;q=0.9,en-GB;q=0.8,en-US;q=0.7',
+  'Cache-Control': 'no-cache',
+  'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
+  'Origin': 'https://vidsrc.stream',
+  'Pragma': 'no-cache',
+  'Referer': 'https://vidsrc.stream/prorcp/YTllMjE0NWFjZWE1NTkzOTdlMGE3N2NhMzk5ZTNlNWM6VmxsUGNVRkpUMW94UkhGeVFUazFiRmgyVDAxUk9XNU1kazF4YkdjcldXbGtSSGh3VWl0eWRtWjFUSGROTWxaSUwzRlZSVXBXTmxWYWVGbzRjMGhaYXpkalFYRXdORmszWkZBM2RrMUxkMUpUVkVaSVMyeFhNRE00U0hoeFZtRlhNMDVoTDJaQmNtaDZWV0pLUlhCTWNYazJkMkZOVEN0Rk4yRndhME5ZWjBsemQybzFRM1ZIV1dwVk9IUmpiMHN2UkZsVmNuSkRjRWd2TkVOck5VVktUUzk0U1d0SVlUQXpNVmhCYkZGU2JqYzNObXBYUWxKV1IyZHJTRk5rYjNvelVqVlZabUZhVjFGTE1sbGliMEZGTDI0eVVFTTVWSHBvTVc4MlpYWXlZVzlzYzFCbGJEZHJZV0pWZVZSMWFtNXJTbEJyTjJoU1FsTnFia3cwTlU5TlVIUXJLM1YxYVZOaGFEaDFWMjE0VXpOV1kwcDNUbVJyU0VncldWaHJhMGdyYzAxemQyeE5ZaTkxYzJKRmFHaG1Tek12Um1WUVpVZHlNU3RHVDBKSlJIcE5ZV28wWXpGSFVGSkpjR280WVN0dlZUaEVObU5yY25FMVlYRlVaMnAwYXpKMkszcHVaME5xTURoR2EzaFdZa3RyU0ZGM2NXdE5NMWhsVVhab2NVUXpia2RSVlVSelprbzBjMElyTlRJNU9IcDZlRlkxYWpZd2RXczFlVWxsVFdSeldsYzVOR293TDFkWUwzRjZOMVpYWjBaRVVIUkhlREpJT0c5Q2JXaFBOQzlpYjFOc01UaFNaMUpQWm5jMlRHWkhNbXh2Um5GclZFMXZZMkl5Tmtsek0zRmxUV0V3WTFJMGVVbHFMMUJOYkdoUFQxaFlObEJoT1RCTlR6TlVORlV4TUhkUE1tNHlaMDlJV21kRVNuVTVaMmhNWW1kcVdHUjZZMlZFZVV4SVN6QnhXaXRNTVVaVGQwdGlRVFUyWVhSSWFDOUlPRTFVWnk4Mk5HTlBibWxSZWxGeWFIbHZXR2xtYms5SlNVTm9kV3RpV0RSblFUMDk-',
+  'Sec-Ch-Ua': '"Microsoft Edge";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
+  'Sec-Ch-Ua-Mobile': '?0',
+  'Sec-Ch-Ua-Platform': '"Windows"',
+  'Sec-Fetch-Dest': 'empty',
+  'Sec-Fetch-Mode': 'cors',
+  'Sec-Fetch-Site': 'cross-site',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
+  'X-User-Agent': 'trailers.to-UA',
+};
 export async function getSubtitle(req, res) {
     try {
         const lang = req.params.lang;
         //console.log(lang)
         const id = req.params.id;
         const promis = await new Promise(async (resolve, reject) => {
-            const browser = await createBrowser().catch(err => { reject(err); return; });
+            //const browser = await createBrowser().catch(err => { reject(err); return; });
             try {
                 const tmdb_Data = (req.params.type === 'movie' ? await getMovieById(req.params.tmdbId) : await getTvShowById(req.params.tmdbId));
                 var imdb = tmdb_Data.imdb_id
@@ -311,81 +356,47 @@ export async function getSubtitle(req, res) {
                     imdb = imdb.split('tt')[1];
                 }
                 if (!imdb) { throw 'IMDB id Error' }
-                const page = (await browser.pages())[0];
-                await page.goto(`https://www.opensubtitles.org/en/search/sublanguageid-${id}/imdbid-${imdb}`,{ timeout: 10000 });
-                await page.addScriptTag({ url: 'https://code.jquery.com/jquery-3.6.0.min.js' });
-                let counterTry = 0;
-                while (counterTry < 5) {
-                    try {
-                        await page.waitForSelector('#n3twork', { timeout: 3000 });
-                        break;
-                    } catch (error) {
-                        await page.reload();
-                    }
-                    counterTry--;
+                
+                //const page = (await browser.pages())[0];
+                
+                //await page.goto(`https://vidsrc.stream/prorcp/ZGE5ZjcwZTI2ODQyNTgwNWNlMjQ0MGQzMTE5ZTEwZmM6YW1KbGVrVTBSalJJTkU5R1ZUQndRMHh4Y25adWMzWk5aemxKT1hwTmVrZDVXVzlZYW5VeGJHcHplVU4wY0ZRck0xWnFjalIyV1VkRFRIbHlWWGxXTmxZNVpGTkZRa1pGVUhKRFZ6Vm5XbTFyZDFSeVMyaEVlWE4zTmpscFlua3JPRzVyWTNCQ1ZrbHBjalJvUXpkdUx6QTFOalpEU0VsRFZrWXhZM0U1UjJSd0wxa3lUVzB3Vm5CbVUyUmxhbWxKVDFjMlpURnhZekYwY201cWNWaG9ORGhVWTJ4VFNYcDNVbU5YUjNNNVJIQlBlREJJUm0xNVpqUkhUbU50YTJRclNITjBRbTl3VFVOc00zcG9ja1JhVHpacU5XNXlSR2xpVkhWcGEzSm1ibXRwTDJWNk0xbHhWMmNyYml0TFdVbFdaRmQyWmpkb04ySjRjVVZ3U3prMlRYQnlaSGxaU0ZOU1EzSnVTV3RXWmxKSmF6UjVVemRaYVRWRWFXSmlXRTlNTDAweWJIWm1MMnhUUkZKa04wNVNkakJwTldaS2RERlNUV3AyYW5KWWNWZEdkVFJ0UWtOWGQzVjROMVZwVmxVNVVtSXpRV3RNUTJKQk0wVnRXRFpOTTJ0NWFXSndXa3MzTlhGaWVVZEdiVVpWUmpaalVVaGpZWEoyUzJ0bE9VNVpibVphTkZNeVNqZGxOVEUxYm1Vd1dHTjZMMWRLZG5FNUswOUZabTl5TkdGbllWZFJZUzh6VTNWNVpFSlJOUzh2TjA0NFp6QkJWM3BwT0dGWlFWQjBTa2xLYldrMlEwZEVRekl3V25sQmN6WnhjME14YzBOWWJuRjVUWGhCWVVGS1NTc3phbmh6YWxSMWNsZGplUzlxT1VoWlQwWnpjbXRCVlVkUFUyaEpVazVTYVc5NVJ6RnBPRkZaVnprM1pGQkdjSGhxVGk5SldrZzJRbnAzU25ZM1NtdElTR3hJYkZOb1RFMVNRVVppV1hJclowZDNhRkU0Y25scVpHdEpZMFpMZUhwVmNHTTBaM0JMZGpGd1RuRXJUbXRZYUV0alVUMDk-`);
+                let fetchURL;
+                if(req.params.type === 'tv'){
+                    fetchURL = `https://rest.opensubtitles.org/search/episode-${req.params.episode}/imdbid-${imdb}/season-${req.params.season}`
+                }else{
+                    fetchURL = `https://rest.opensubtitles.org/search/imdbid-${imdb}`
                 }
-                const pageNetWORK = await page.$('#n3twork');
-                console.log(pageNetWORK);
-                let defurl = [];
-                if (pageNetWORK) {
-                    defurl = await page.evaluate((type, season, episode) => {
-                        var url = [];
-                        console.log($);
-                        var base = 'https://www.opensubtitles.org';
-                        if (type === 'tv') {
-                            const data = ($($(($('#season-' + season).parents('tr').nextAll())[episode - 1]).children('td:nth-child(3)')).children('a').attr('href'));
-                            if (data) {
-                                url.push(base + data);
-                            }
-                        } else {
-                            $('tr.change.expandable').each((i, v) => {
-                                if (i > 7) { return; }
-                                const data = $($(v).children('td:nth-child(5)')).children('a').attr('href')
-                                if (data) {
-                                    url.push(base);
-                                }
-                            })
-                        }
-                        return url;
-                    }, req.params.type, req.params.season, req.params.episode);
-                }
-                const url = defurl.map((el) => encrypt(el));
-                await browser.close();
-                counterBrowsers -= 1;
-                if (url.length > 0) {
-                    if (req.params.type === 'movie') {
-                        const returnURLS = await testSubtitleMovie(url);
-                        if (returnURLS.length === 0) {
-                            reject(`Couldn't find any subtitle for ${lang}!`);
-                            return;
-                        }
-                        resolve({ data: { url: returnURLS }, lang });
-                        return;
-                    }
-                    resolve({ data: { url, index: await downloadAndProcessZip(url[0]) }, lang });
-                }
-                reject(`Couldn't find any subtitle for ${lang}!`);
+                const jsonData = (await(await fetch(fetchURL, {
+                    method: 'GET',
+                   headers:subHeaders,
+                })).json());
+                //console.log(jsonData[0]);
+                resolve(jsonData);
             } catch (error) {
-                await browser.close();
-                counterBrowsers -= 1;
+                console.log(error);
+                //await browser.close();
+                //counterBrowsers -= 1;
                 reject(`Couldn't find any subtitle for ${lang}!`);
             }
         });
         //console.log(lang);
         const newSub = await Sub.findOneAndUpdate({ tmdbId: req.params.tmdbId, season: (req.params.season || 0), episode: (req.params.episode || 0) },
             {
-                lang,
-                data: promis.data,
-                type: req.params.type,
+                data: promis,
+                type: req.params.type
             },
             {
                 upsert: true,
                 new: true
             }
         ).exec();
-        res.status(200).json(promis);
+        //console.log(id);
+        const targetData = promis.filter((el)=>el.SubLanguageID === id);
+        if(targetData.length === 0){throw new Error(`Couldn't find any subtitle for ${lang}!`)}
+        const returnData = (targetData.map((el)=>encrypt(el.SubDownloadLink))).slice(0,17);
+        res.status(200).json(returnData);
     } catch (err) {
-        console.log(err);
+        //console.log(err);
         res.status((err && err.statusCode) || 500).json({ error: err.toString(), statusCode: err.statusCode || 500 });
     }
 }
@@ -393,14 +404,14 @@ const testSubtitleMovie = async (url) => {
     const returnURL = [];
     return await new Promise((resolve) => {
         url.forEach(async (v, i) => {
-            console.log(decrypt(v));
+            //console.log(decrypt(v));
             try {
                 const response = await fetch(decrypt(url));
                 if (response.ok) {
                     returnURL.push(url[i]);
                 }
             } catch (error) {
-                console.log(error);
+               // console.log(error);
             }
             if (i === url.length - 1) {
                 resolve(returnURL);
@@ -416,10 +427,14 @@ export async function isSubtitleExist(req, res, next) {
             type: req.params.type,
             season: (req.params.season || 0),
             episode: (req.params.episode || 0),
-            lang: req.params.lang
         })
+        //console.log(req.params.tmdbId,req.params.type,req.params.season||0,req.params.episode || 0);
+        //console.log(subInfo);
         if (!subInfo) { next(); return; }
-        res.status(200).json(subInfo);
+        const targetData = subInfo.data.filter((el)=>el.SubLanguageID === req.params.id);
+        if(targetData.length === 0){throw new Error(`Couldn't find any subtitle for ${req.params.lang}!`)}
+        const returnData = (targetData.map((el)=>encrypt(el.SubDownloadLink))).slice(0,17);
+        res.status(200).json(returnData);
     } catch (err) {
         res.status(err.statusCode || 500).json({ error: err.toString(), statusCode: err.statusCode || 500 });
     }
@@ -452,3 +467,30 @@ async function downloadAndProcessZip(url) {
         console.error('Error:', error);
     }
 }
+
+
+// const urlX = 'https://rest.opensubtitles.org/search/episode-1/imdbid-9140554/season-1';
+
+// const headers = {
+//   'Accept': 'application/json, text/javascript, */*; q=0.01',
+//   'Accept-Encoding': 'gzip, deflate, br',
+//   'Accept-Language': 'ar,en;q=0.9,en-GB;q=0.8,en-US;q=0.7',
+//   'Cache-Control': 'no-cache',
+//   'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
+//   'Origin': 'https://vidsrc.stream',
+//   'Pragma': 'no-cache',
+//   'Referer': 'https://vidsrc.stream/prorcp/YTllMjE0NWFjZWE1NTkzOTdlMGE3N2NhMzk5ZTNlNWM6VmxsUGNVRkpUMW94UkhGeVFUazFiRmgyVDAxUk9XNU1kazF4YkdjcldXbGtSSGh3VWl0eWRtWjFUSGROTWxaSUwzRlZSVXBXTmxWYWVGbzRjMGhaYXpkalFYRXdORmszWkZBM2RrMUxkMUpUVkVaSVMyeFhNRE00U0hoeFZtRlhNMDVoTDJaQmNtaDZWV0pLUlhCTWNYazJkMkZOVEN0Rk4yRndhME5ZWjBsemQybzFRM1ZIV1dwVk9IUmpiMHN2UkZsVmNuSkRjRWd2TkVOck5VVktUUzk0U1d0SVlUQXpNVmhCYkZGU2JqYzNObXBYUWxKV1IyZHJTRk5rYjNvelVqVlZabUZhVjFGTE1sbGliMEZGTDI0eVVFTTVWSHBvTVc4MlpYWXlZVzlzYzFCbGJEZHJZV0pWZVZSMWFtNXJTbEJyTjJoU1FsTnFia3cwTlU5TlVIUXJLM1YxYVZOaGFEaDFWMjE0VXpOV1kwcDNUbVJyU0VncldWaHJhMGdyYzAxemQyeE5ZaTkxYzJKRmFHaG1Tek12Um1WUVpVZHlNU3RHVDBKSlJIcE5ZV28wWXpGSFVGSkpjR280WVN0dlZUaEVObU5yY25FMVlYRlVaMnAwYXpKMkszcHVaME5xTURoR2EzaFdZa3RyU0ZGM2NXdE5NMWhsVVhab2NVUXpia2RSVlVSelprbzBjMElyTlRJNU9IcDZlRlkxYWpZd2RXczFlVWxsVFdSeldsYzVOR293TDFkWUwzRjZOMVpYWjBaRVVIUkhlREpJT0c5Q2JXaFBOQzlpYjFOc01UaFNaMUpQWm5jMlRHWkhNbXh2Um5GclZFMXZZMkl5Tmtsek0zRmxUV0V3WTFJMGVVbHFMMUJOYkdoUFQxaFlObEJoT1RCTlR6TlVORlV4TUhkUE1tNHlaMDlJV21kRVNuVTVaMmhNWW1kcVdHUjZZMlZFZVV4SVN6QnhXaXRNTVVaVGQwdGlRVFUyWVhSSWFDOUlPRTFVWnk4Mk5HTlBibWxSZWxGeWFIbHZXR2xtYms5SlNVTm9kV3RpV0RSblFUMDk-',
+//   'Sec-Ch-Ua': '"Microsoft Edge";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
+//   'Sec-Ch-Ua-Mobile': '?0',
+//   'Sec-Ch-Ua-Platform': '"Windows"',
+//   'Sec-Fetch-Dest': 'empty',
+//   'Sec-Fetch-Mode': 'cors',
+//   'Sec-Fetch-Site': 'cross-site',
+//   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
+//   'X-User-Agent': 'trailers.to-UA',
+// };
+
+// console.log(await fetch(urlX, { method: 'GET', headers })
+//   .then(response => response.json())
+//   .then(data => console.log(data))
+//   .catch(error => console.error('Error:', error)));

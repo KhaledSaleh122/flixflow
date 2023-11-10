@@ -17,7 +17,7 @@ const serverListDownloader = () =>{
         const url = listURL.substring(0,listURL.lastIndexOf('/')+1);
         const response = await axios.get(listURL);
         const listText = response.data;
-        const convertedText = listText.replace(/(index-f|iframes-f)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(url + match)}`});
+        const convertedText = listText.replace(/(index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(url + match)}`});
         return convertedText;
     }
     return info
@@ -37,13 +37,21 @@ const downloadList_handler = async(req,res) =>{
                 list =await ListDownload.serverTwo(listURL,req.params.server);
                 break;
             }
+            case 3:{
+                list =await ListDownload.serverTwo(listURL,req.params.server);
+                break;
+            }
+            case 4:{
+                list =await ListDownload.serverTwo(listURL,req.params.server);
+                break;
+            }
         }
         //console.log(list)
         res.setHeader('Content-Type', 'application/x-mpegURL');
         res.setHeader('Content-Length', Buffer.byteLength(list, 'utf-8'));
         res.status(200).send(list);
     } catch (error) {
-        console.log(error);
+        //console.log(error);
         if(error.response && [403,404].find((el)=>el===error.response.status)){
             console.log(await resetVideoData(decrypt(req.params.fileUrl)));
         }
@@ -67,6 +75,13 @@ const serverFileDownloader = () =>{
         //const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
         return fileText;
     }
+    info['serverThree'] = async(fileURL,server)=>{
+        const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
+        const response = await axios.get(fileURL);
+        const fileText = response.data;
+        //const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
+        return fileText;
+    }
     return info
 }
 
@@ -83,6 +98,14 @@ const downloadFile_handler = async(req,res) =>{
             }
             case 2:{
                 file =await fileDownload.serverTwo(fileURL,req.params.server);
+                break;
+            }
+            case 3:{
+                file =await fileDownload.serverThree(fileURL,req.params.server);
+                break;
+            }
+            case 4:{
+                file =await fileDownload.serverThree(fileURL,req.params.server);
                 break;
             }
         }
@@ -112,7 +135,7 @@ const downloadImage_handler = async(req,res) =>{
         const fileURL = decrypt(req.params.fileUrl);
         const file =await fileDownload.serverOne(fileURL,res);
     } catch (error) {
-        console.log(error);
+        //console.log(error);
         res.status(500).json({error:"Error getting file,restart the page!"})
     }
 }

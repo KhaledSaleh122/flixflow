@@ -8,7 +8,6 @@ export default function socketScript(server) {
   const rooms = {};
   const rateLimitWindowMs = 60 * 1000; // 1 minute
   const rateLimitMaxRequests = 170; // Maximum requests allowed per minute
-
   const io = new Server(server, {
     cookie: true,
     cors: {
