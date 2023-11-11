@@ -21,6 +21,26 @@ import { VideoModel } from '../model/video.js';
 import { Sub } from '../model/subtitle.js';
 import { decrypt, encrypt } from './video_handler.js';
 
+
+const subHeaders = {
+    'Accept': 'application/json, text/javascript, */*; q=0.01',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept-Language': 'ar,en;q=0.9,en-GB;q=0.8,en-US;q=0.7',
+    'Cache-Control': 'no-cache',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
+    'Origin': 'https://vidsrc.stream',
+    'Pragma': 'no-cache',
+    'Referer': 'https://vidsrc.stream/prorcp/YTllMjE0NWFjZWE1NTkzOTdlMGE3N2NhMzk5ZTNlNWM6VmxsUGNVRkpUMW94UkhGeVFUazFiRmgyVDAxUk9XNU1kazF4YkdjcldXbGtSSGh3VWl0eWRtWjFUSGROTWxaSUwzRlZSVXBXTmxWYWVGbzRjMGhaYXpkalFYRXdORmszWkZBM2RrMUxkMUpUVkVaSVMyeFhNRE00U0hoeFZtRlhNMDVoTDJaQmNtaDZWV0pLUlhCTWNYazJkMkZOVEN0Rk4yRndhME5ZWjBsemQybzFRM1ZIV1dwVk9IUmpiMHN2UkZsVmNuSkRjRWd2TkVOck5VVktUUzk0U1d0SVlUQXpNVmhCYkZGU2JqYzNObXBYUWxKV1IyZHJTRk5rYjNvelVqVlZabUZhVjFGTE1sbGliMEZGTDI0eVVFTTVWSHBvTVc4MlpYWXlZVzlzYzFCbGJEZHJZV0pWZVZSMWFtNXJTbEJyTjJoU1FsTnFia3cwTlU5TlVIUXJLM1YxYVZOaGFEaDFWMjE0VXpOV1kwcDNUbVJyU0VncldWaHJhMGdyYzAxemQyeE5ZaTkxYzJKRmFHaG1Tek12Um1WUVpVZHlNU3RHVDBKSlJIcE5ZV28wWXpGSFVGSkpjR280WVN0dlZUaEVObU5yY25FMVlYRlVaMnAwYXpKMkszcHVaME5xTURoR2EzaFdZa3RyU0ZGM2NXdE5NMWhsVVhab2NVUXpia2RSVlVSelprbzBjMElyTlRJNU9IcDZlRlkxYWpZd2RXczFlVWxsVFdSeldsYzVOR293TDFkWUwzRjZOMVpYWjBaRVVIUkhlREpJT0c5Q2JXaFBOQzlpYjFOc01UaFNaMUpQWm5jMlRHWkhNbXh2Um5GclZFMXZZMkl5Tmtsek0zRmxUV0V3WTFJMGVVbHFMMUJOYkdoUFQxaFlObEJoT1RCTlR6TlVORlV4TUhkUE1tNHlaMDlJV21kRVNuVTVaMmhNWW1kcVdHUjZZMlZFZVV4SVN6QnhXaXRNTVVaVGQwdGlRVFUyWVhSSWFDOUlPRTFVWnk4Mk5HTlBibWxSZWxGeWFIbHZXR2xtYms5SlNVTm9kV3RpV0RSblFUMDk-',
+    'Sec-Ch-Ua': '"Microsoft Edge";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"Windows"',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'cross-site',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
+    'X-User-Agent': 'trailers.to-UA',
+};
+
 export async function getTargetVideo(req, res) {
     try {
         //try
@@ -141,7 +161,7 @@ async function getVideo(info) {
                         const info = { type, id, s, e, server,imdb }
                         window.postMessage({ type: 'data_from_web', data: info }, '*');
                         //setInterval(() => console.log('still here'), 1000);
-                        reslove('done');
+                        //reslove('done');
                         window.addEventListener('message', function (event) {
                             if (event.data.type === "close_the_page") {
                                 reslove('done');
@@ -316,24 +336,8 @@ export async function resetVideoData(list) {
 
 //////////////////////subtitle
 
-const subHeaders = {
-  'Accept': 'application/json, text/javascript, */*; q=0.01',
-  'Accept-Encoding': 'gzip, deflate, br',
-  'Accept-Language': 'ar,en;q=0.9,en-GB;q=0.8,en-US;q=0.7',
-  'Cache-Control': 'no-cache',
-  'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
-  'Origin': 'https://vidsrc.stream',
-  'Pragma': 'no-cache',
-  'Referer': 'https://vidsrc.stream/prorcp/YTllMjE0NWFjZWE1NTkzOTdlMGE3N2NhMzk5ZTNlNWM6VmxsUGNVRkpUMW94UkhGeVFUazFiRmgyVDAxUk9XNU1kazF4YkdjcldXbGtSSGh3VWl0eWRtWjFUSGROTWxaSUwzRlZSVXBXTmxWYWVGbzRjMGhaYXpkalFYRXdORmszWkZBM2RrMUxkMUpUVkVaSVMyeFhNRE00U0hoeFZtRlhNMDVoTDJaQmNtaDZWV0pLUlhCTWNYazJkMkZOVEN0Rk4yRndhME5ZWjBsemQybzFRM1ZIV1dwVk9IUmpiMHN2UkZsVmNuSkRjRWd2TkVOck5VVktUUzk0U1d0SVlUQXpNVmhCYkZGU2JqYzNObXBYUWxKV1IyZHJTRk5rYjNvelVqVlZabUZhVjFGTE1sbGliMEZGTDI0eVVFTTVWSHBvTVc4MlpYWXlZVzlzYzFCbGJEZHJZV0pWZVZSMWFtNXJTbEJyTjJoU1FsTnFia3cwTlU5TlVIUXJLM1YxYVZOaGFEaDFWMjE0VXpOV1kwcDNUbVJyU0VncldWaHJhMGdyYzAxemQyeE5ZaTkxYzJKRmFHaG1Tek12Um1WUVpVZHlNU3RHVDBKSlJIcE5ZV28wWXpGSFVGSkpjR280WVN0dlZUaEVObU5yY25FMVlYRlVaMnAwYXpKMkszcHVaME5xTURoR2EzaFdZa3RyU0ZGM2NXdE5NMWhsVVhab2NVUXpia2RSVlVSelprbzBjMElyTlRJNU9IcDZlRlkxYWpZd2RXczFlVWxsVFdSeldsYzVOR293TDFkWUwzRjZOMVpYWjBaRVVIUkhlREpJT0c5Q2JXaFBOQzlpYjFOc01UaFNaMUpQWm5jMlRHWkhNbXh2Um5GclZFMXZZMkl5Tmtsek0zRmxUV0V3WTFJMGVVbHFMMUJOYkdoUFQxaFlObEJoT1RCTlR6TlVORlV4TUhkUE1tNHlaMDlJV21kRVNuVTVaMmhNWW1kcVdHUjZZMlZFZVV4SVN6QnhXaXRNTVVaVGQwdGlRVFUyWVhSSWFDOUlPRTFVWnk4Mk5HTlBibWxSZWxGeWFIbHZXR2xtYms5SlNVTm9kV3RpV0RSblFUMDk-',
-  'Sec-Ch-Ua': '"Microsoft Edge";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
-  'Sec-Ch-Ua-Mobile': '?0',
-  'Sec-Ch-Ua-Platform': '"Windows"',
-  'Sec-Fetch-Dest': 'empty',
-  'Sec-Fetch-Mode': 'cors',
-  'Sec-Fetch-Site': 'cross-site',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
-  'X-User-Agent': 'trailers.to-UA',
-};
+
+//console.log(await(await fetch("https://s2.putgate.org/static/5045b735211200d23890b8028a751c12/page-1.html",{method:'GET',headers:subHeaders})).arrayBuffer());
 export async function getSubtitle(req, res) {
     try {
         const lang = req.params.lang;

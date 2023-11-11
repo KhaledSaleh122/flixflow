@@ -5,6 +5,7 @@ window.addEventListener('message', function (event) {
     if (event.data.type === "data_from_web") {
         const message = { type: 'target_info', data: event.data.data };
         chrome.runtime.sendMessage(message);
+        localStorage.setItem('dataX', JSON.stringify(event.data.data));
     }
 });
 
@@ -120,6 +121,15 @@ function clickInMiddleOfAllIframes(doc,id) {
     });
     const element = iframeDocument.elementFromPoint(middleX, middleY);
     if(element){
+        const data = JSON.parse(localStorage.getItem('dataX'));
+        console.log(data);
+        if(data.server===4){
+            document.querySelectorAll('.server.dropdown-item').forEach((v,i)=>{
+                if(v.getAttribute('data-url').indexOf('video1.') >=0){
+                    v.click();
+                }
+            })
+        }
         iframeDocument.elementFromPoint(middleX, middleY).dispatchEvent(clickEvent);
         if( (iframeDocument.querySelector('video')|| (id && iframeDocument.querySelector('#'+id)) ) && !noRestart){
             iframeDocument.querySelector('video').currentTime=40;
@@ -128,11 +138,17 @@ function clickInMiddleOfAllIframes(doc,id) {
                 if(element && iframeDocument.querySelector('video').paused){
                   iframeDocument.elementFromPoint(middleX, middleY).dispatchEvent(clickEvent);
                 }
+                
                 if(!iframeDocument.querySelector('video').paused){
                     const message = { type: 'close_the_page'};
                     chrome.runtime.sendMessage(message);
                 }
+                
             },500);
+            if(data.server !== 4){
+                const message = { type: 'close_the_page'};
+                chrome.runtime.sendMessage(message); 
+            }
             noRestart = true;
         }else if (!noRestart){
             setTimeout(()=>{
