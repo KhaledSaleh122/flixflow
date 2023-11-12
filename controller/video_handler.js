@@ -44,6 +44,13 @@ const serverListDownloader = () =>{
         const convertedText = listText.replace(/(https:\/\/|index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(match)}\n`});
         return convertedText;
     }
+    info['serverFour'] = async(listURL,server)=>{
+        const url = listURL.substring(0,listURL.lastIndexOf('/')+1);
+        const response = await axios.get(listURL,{method:"GET",headers:subHeaders});
+        const listText = response.data;
+        // const convertedText = listText.replace(/(https:\/\/|index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(match)}\n`});
+        return listText;
+    }
     return info
 }
 const downloadList_handler = async(req,res) =>{
@@ -66,7 +73,7 @@ const downloadList_handler = async(req,res) =>{
                 break;
             }
             case 4:{
-                list =await ListDownload.serverTwo(listURL,req.params.server);
+                list =await ListDownload.serverFour(listURL,req.params.server);
                 break;
             }
         }
@@ -155,7 +162,7 @@ const downloadFile_handler = async(req,res) =>{
         //res.setHeader('Content-Length', Buffer.byteLength(file, 'utf-8'));
         //res.status(200).send(file);
     } catch (error) {
-        console.log(error);
+        //console.log(error);
         res.status(500).json({error:"Error getting file,restart the page!"})
     }
 }
