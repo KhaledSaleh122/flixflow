@@ -127,6 +127,7 @@ function clickInMiddleOfAllIframes(doc,id) {
             document.querySelectorAll('.server.dropdown-item').forEach((v,i)=>{
                 if(v.getAttribute('data-url').indexOf('video1.') >=0){
                     v.click();
+                    v.remove();
                 }
             })
         }

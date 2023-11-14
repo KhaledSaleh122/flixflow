@@ -145,7 +145,7 @@ async function getVideo(info) {
                     counterBrowsers--;
                     reject('couldn\'t find the target :: 2');
                     //sendVideoError(info);
-                }, 40000 )
+                }, 30000 )
                 let imdb;
                 if (info.type === 'tv') {
                     imdb = (await getIMDB(info.id)).result;
@@ -279,7 +279,7 @@ async function createBrowser() {
             ignoreHTTPSErrors: false,
             headless: 'new',
             //devtools:true,
-           // headless: false,
+            //headless: false,
             args,
         }
     )
@@ -397,7 +397,7 @@ export async function getSubtitle(req, res) {
         //console.log(id);
         const targetData = promis.filter((el)=>el.SubLanguageID === id);
         if(targetData.length === 0){throw new Error(`Couldn't find any subtitle for ${lang}!`)}
-        const returnData = (targetData.map((el)=>encrypt(el.SubDownloadLink))).slice(0,17);
+        const returnData = (targetData.map((el)=>{return {list:encrypt(el.SubDownloadLink),encode:el.SubEncoding}})).slice(0,17);
         res.status(200).json(returnData);
     } catch (err) {
         //console.log(err);
@@ -437,7 +437,7 @@ export async function isSubtitleExist(req, res, next) {
         if (!subInfo) { next(); return; }
         const targetData = subInfo.data.filter((el)=>el.SubLanguageID === req.params.id);
         if(targetData.length === 0){throw new Error(`Couldn't find any subtitle for ${req.params.lang}!`)}
-        const returnData = (targetData.map((el)=>encrypt(el.SubDownloadLink))).slice(0,17);
+        const returnData = (targetData.map((el)=>{return {list:encrypt(el.SubDownloadLink),encode:el.SubEncoding}})).slice(0,17);
         res.status(200).json(returnData);
     } catch (err) {
         res.status(err.statusCode || 500).json({ error: err.toString(), statusCode: err.statusCode || 500 });

@@ -82,9 +82,9 @@ const downloadList_handler = async(req,res) =>{
         res.setHeader('Content-Length', Buffer.byteLength(list, 'utf-8'));
         res.status(200).send(list);
     } catch (error) {
-        if(!error.response || [403,404].find((el)=>el===error.response.status)){
+       // if(!error.response || [403,404].find((el)=>el===error.response.status)){
             console.log(await resetVideoData(decrypt(req.params.fileUrl)));
-        }
+       // }
         res.status(500).json({error:"Error getting list,restart the page!"})
     }
 }
