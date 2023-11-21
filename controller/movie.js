@@ -119,6 +119,7 @@ export async function getNewestMovie(req,res){
         const dataToReturn = { result: data.results, total_pages: data.total_pages, total_results: data.total_results,page }
         res.status(200).json(dataToReturn);
     }catch(err){
+        console.log(err);
         res.status(err.statusCode || 500).json({error : err.toString(),statusCode : err.statusCode || 500});
     }
     return;
