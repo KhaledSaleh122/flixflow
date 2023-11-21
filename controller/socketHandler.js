@@ -139,7 +139,7 @@ export default function socketScript(server) {
         data: Array.from(room).map((el) => {
           let userInfo;
           Object.entries(emitCounts).forEach(([key, val]) => {
-            if (val.socketId === el) {
+            if (val && val.socketId === el) {
               userInfo = { id: key, name: val.name };
             }
           })
