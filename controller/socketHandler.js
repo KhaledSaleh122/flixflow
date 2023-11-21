@@ -68,6 +68,7 @@ export default function socketScript(server) {
     } else {
       io.to(emitCounts[socket.user._id].socketId).emit('message', { data: "You already connected to other room, You will be redirected to home.", redirect: true });
       socket.emit('message', { data: "You already connected to other room, You will be redirected to home.", redirect: true });
+      disconnectUser();
       //addUserTOroom(socket);
     }
   }
@@ -91,11 +92,11 @@ export default function socketScript(server) {
         if (socket && socket.roomId) {
           const room = io.sockets.adapter.rooms.get(socket.roomId);
           if (room && room.size <= 0) {
-            rooms[socket.roomId] = null;
+            delete rooms[socket.roomId];
           }
         }
         if (socket.user && socket.user._id && emitCounts[socket.user._id] && emitCounts[socket.user._id].socketId === socket.id) {
-          emitCounts[socket.user._id] = null;
+          delete emitCounts[socket.user._id];
         }
       } catch (error) {
         socket.emit('message', { data: `Error:${error.message}`, redirect: false });
