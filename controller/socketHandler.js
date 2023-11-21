@@ -49,7 +49,7 @@ export default function socketScript(server) {
           const numUsersInRoom = room ? room.size : 0;
           io.to(socket.roomId).emit('new_video_stat_check_all_ready', { id: info.id, users: numUsersInRoom });
         } else {
-          disconnectUser();
+          disconnectUser(socket);
         }
       } catch (error) {
         socket.emit('message', { data: `Error:${error.message}`, redirect: false });
@@ -68,7 +68,7 @@ export default function socketScript(server) {
     } else {
       io.to(emitCounts[socket.user._id].socketId).emit('message', { data: "You already connected to other room, You will be redirected to home.", redirect: true });
       socket.emit('message', { data: "You already connected to other room, You will be redirected to home.", redirect: true });
-      disconnectUser();
+      disconnectUser(socket);
       //addUserTOroom(socket);
     }
   }
@@ -125,7 +125,7 @@ export default function socketScript(server) {
           console.log('user belong to room ' + socket.roomId);
           socket.emit('room_check', { result: true });
         } else {
-          disconnectUser();
+          disconnectUser(socket);
         }
       } catch (error) {
         socket.emit('message', { data: `Error:${error.message}`, redirect: false });
@@ -156,7 +156,7 @@ export default function socketScript(server) {
     socket.on("Auth_check", (auth) => {
       try {
         //console.log(auth);
-        if (!auth.islogedIn) { socket.emit('Auth_check', { result: false }); disconnectUser(); return; }
+        if (!auth.islogedIn) { socket.emit('Auth_check', { result: false }); disconnectUser(socket); return; }
         socket.user = auth.user;
         socket.emit('Auth_check', { result: true });
         limiterHandler(socket);
