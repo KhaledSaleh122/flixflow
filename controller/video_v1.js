@@ -313,6 +313,7 @@ export async function isVideoInfoExists(req, res, next) {
             return;
         }
         if (videoInfo.list) { videoInfo.list = encrypt(videoInfo.list); }
+        //if (videoInfo.list) { videoInfo.list = videoInfo.list; }
         if (videoInfo.subtitle) { videoInfo.subtitle.map((el) => { el.file = encrypt(el.file); return el }) };
         res.status(200).json(videoInfo);
     } catch (err) {

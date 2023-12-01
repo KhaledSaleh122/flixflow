@@ -23,32 +23,32 @@ const subHeaders = {
 
 const serverListDownloader = () =>{
     const info = {};
-    info['serverOne'] = async(listURL,server)=>{
+    info['serverOne'] = async(listURL,server,originList)=>{
         const url = listURL.substring(0, listURL.indexOf('list'));
         const response = await axios.get(listURL);
         const listText = response.data;
-        const convertedText = listText.replace(/RESOLUTION=\d+x\d+\n(.*?\.m3u8)/g, (match,content) => { return match.replace(content,`/video/file/${server}/${encrypt(url + content)}`) });
+        const convertedText = listText.replace(/RESOLUTION=\d+x\d+\n(.*?\.m3u8)/g, (match,content) => { return match.replace(content,`/video/file/${originList}/${server}/${encrypt(url + content)}`) });
         return convertedText;
     }
-    info['serverTwo'] = async(listURL,server)=>{
+    info['serverTwo'] = async(listURL,server,originList)=>{
         const url = listURL.substring(0,listURL.lastIndexOf('/')+1);
         const response = await axios.get(listURL,{method:"GET",headers:subHeaders});
         const listText = response.data;
-        const convertedText = listText.replace(/(https:\/\/|index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(url + match)}`});
+        const convertedText = listText.replace(/(https:\/\/|index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${originList}/${server}/${encrypt(url + match)}`});
         return convertedText;
     }
-    info['serverThree'] = async(listURL,server)=>{
+    info['serverThree'] = async(listURL,server,originList)=>{
         const url = listURL.substring(0,listURL.lastIndexOf('/')+1);
         const response = await axios.get(listURL,{method:"GET",headers:subHeaders});
         const listText = response.data;
-        const convertedText = listText.replace(/(https:\/\/|index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(match)}\n`});
+        const convertedText = listText.replace(/(https:\/\/|index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${originList}/${server}/${encrypt(match)}\n`});
         return convertedText;
     }
-    info['serverFour'] = async(listURL,server)=>{
+    info['serverFour'] = async(listURL,server,originList)=>{
         const url = listURL.substring(0,listURL.lastIndexOf('/')+1);
         const response = await axios.get(listURL,{method:"GET",headers:subHeaders});
         const listText = response.data;
-        // const convertedText = listText.replace(/(https:\/\/|index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${server}/${encrypt(match)}\n`});
+        // const convertedText = listText.replace(/(https:\/\/|index-|iframes-)[^"#]*/g, (match,content) => { return  `/video/file/${originList}/${server}/${encrypt(match)}\n`});
         return listText;
     }
     return info
@@ -61,19 +61,19 @@ const downloadList_handler = async(req,res) =>{
         let list;
         switch(req.params.server){
             case 1:{
-                list =await ListDownload.serverOne(listURL,req.params.server);
+                list =await ListDownload.serverOne(listURL,req.params.server,req.params.fileUrl);
                 break;
             }
             case 2:{
-                list =await ListDownload.serverThree(listURL,req.params.server);
+                list =await ListDownload.serverThree(listURL,req.params.server,req.params.fileUrl);
                 break;
             }
             case 3:{
-                list =await ListDownload.serverThree(listURL,req.params.server);
+                list =await ListDownload.serverThree(listURL,req.params.server,req.params.fileUrl);
                 break;
             }
             case 4:{
-                list =await ListDownload.serverFour(listURL,req.params.server);
+                list =await ListDownload.serverFour(listURL,req.params.server,req.params.fileUrl);
                 break;
             }
         }
@@ -91,21 +91,21 @@ const downloadList_handler = async(req,res) =>{
 
 const serverFileDownloader = () =>{
     const info = {};
-    info['serverOne'] = async(fileURL,server)=>{
+    info['serverOne'] = async(fileURL,server,listURL)=>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL);
         const fileText = response.data;
         const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
         return convertedText;
     }
-    info['serverTwo'] = async(fileURL,server)=>{
+    info['serverTwo'] = async(fileURL,server,listURL)=>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL,{method:"GET",headers:subHeaders});
         const fileText = response.data;
         //const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
         return fileText;
     }
-    info['serverThree'] = async(fileURL,server)=>{
+    info['serverThree'] = async(fileURL,server,listURL)=>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL,{method:"GET",headers:subHeaders});
         //console.log(response);
@@ -113,7 +113,7 @@ const serverFileDownloader = () =>{
         //const convertedText = fileText.replace(/#EXTINF:\d+\.\d+,\s*([\s\S]*?)\n/g, (match,content) => { return match.replace(content,`/video/image/${server}/${encrypt(url + content)}`) });
         return fileText;
     }
-    info['serverFour'] = async(fileURL,server)=>{
+    info['serverFour'] = async(fileURL,server,listURL)=>{
         const url = fileURL.substring(0, fileURL.lastIndexOf('/') + 1);
         const response = await axios.get(fileURL);
         const fileText = response.data;
@@ -129,11 +129,11 @@ const downloadFile_handler = async(req,res) =>{
         if(!req.params.fileUrl){throw new Error('file is missing!')}
         //console.log(req.params.fileUrl);
         const fileURL = decrypt(req.params.fileUrl);
-        //console.log(fileURL);
-        let file;
+        const listURL = decrypt(req.params.list);
+         let file;
         switch(req.params.server){
             case 1:{
-                file =await fileDownload.serverOne(fileURL,req.params.server);
+                file =await fileDownload.serverOne(fileURL,req.params.server,listURL);
                 res.status(200).send(file);
                 break;
             }
@@ -145,7 +145,7 @@ const downloadFile_handler = async(req,res) =>{
                 break;
             }
             case 3:{
-                //file =await fileDownload.serverThree(fileURL,req.params.server);
+                //file =await fileDownload.serverThree(fileURL,req.params.server,listURL);
                 res.setHeader('Content-Type', 'text/html');
                 https.get(fileURL,{method:"GET",headers:subHeaders}, (respo) => {
                     respo.pipe(res);
@@ -153,7 +153,7 @@ const downloadFile_handler = async(req,res) =>{
                 break;
             }
             case 4:{
-                file =await fileDownload.serverFour(fileURL,req.params.server);
+                file =await fileDownload.serverFour(fileURL,req.params.server,listURL);
                 res.status(200).send(file);
                 break;
             }
@@ -163,6 +163,7 @@ const downloadFile_handler = async(req,res) =>{
         //res.status(200).send(file);
     } catch (error) {
         //console.log(error);
+        console.log(await resetVideoData(decrypt(req.params.list)));
         res.status(500).json({error:"Error getting file,restart the page!"})
     }
 }
