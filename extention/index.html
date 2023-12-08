@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"
+        integrity="sha384-mZLF4UVrpi/QTWPA7BjNPEnkIfRFn4ZEO3Qt/HFklTJBj/gBOV8G3HcKn4NfQblz"
+        crossorigin="anonymous"></script>
+</body>
+<script>
+    const socket = io('http://localhost:4003');
+    socket.on('data', data => {
+        window.postMessage({ type: 'data_from_web', data }, '*');
+        window.addEventListener('message', function (event) {
+            console.log(event.data.type);
+            if (event.data.type === "data_from_content") {
+                socket.emit('data',event.data.data);
+            }
+        });
+        const serverData = serverHandler(data)
+        const newIframe = document.createElement('iframe');
+        newIframe.src = serverData.url;
+        newIframe.style.height = '100vh';
+        newIframe.style.width = '100vw';
+        document.body.append(newIframe);
+        newIframe.addEventListener("load", async () => {
+           frameLoaded();
+        })
+    })
+    const serverHandler = (info) => {
+        const toBeReturned = {};
+        toBeReturned.url = urlFinder(info);
+        /*
+        switch(info.server){
+            case 1: 
+        }
+        */
+        return toBeReturned;
+    }
+    const urlFinder = (info) => {
+        let targetURL;
+        switch (info.server) {
+            case 1: {
+                const url = 'https://vidsrc.to/embed';
+                targetURL = `${url}/${info.type}/${info.id}${info.type === 'tv' ? `/${info.season}/${info.episode}` : ''}`
+                break;
+            }
+            case 2: {
+                const url = ' https://vidsrc.me/embed';
+                targetURL = `${url}/${info.type === 'tv' ? `tv?tmdb=${info.id}&season=${info.season}&episode=${info.episode}` : `movie?tmdb=${info.id}`}`
+            }
+        }
+        return targetURL;
+    }
+    let noRestart = false;
+    let iX = 1;
+    const frameLoaded = () => {
+        clickInMiddleOfAllIframes(document, '');
+    }
+
+
+    function clickInMiddleOfAllIframes(doc, id) {
+        const iframes = doc.querySelectorAll('iframe');
+        for (let i = 0; i < iframes.length; i++) {
+            const iframe = iframes[i];
+            clickInMiddleOfIframe(iframe, id);
+            // Recursively click in the middle of nested iframes
+            clickInMiddleOfAllIframes(iframe.contentDocument || iframe.contentWindow.document, id);
+        }
+    }
+
+
+    function clickInMiddleOfIframe(iframe, id) {
+        const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+        const iframeWidth = iframe.clientWidth || iframeDocument.body.clientWidth;
+        const iframeHeight = iframe.clientHeight || iframeDocument.body.clientHeight;
+        const middleX = iframeWidth / 2;
+        const middleY = iframeHeight / 2;
+        const clickEvent = new MouseEvent('click', {
+            view: iframe.contentWindow,
+            bubbles: true,
+            cancelable: true,
+            clientX: middleX,
+            clientY: middleY,
+        });
+        const element = iframeDocument.elementFromPoint(middleX, middleY);
+        if (element) {
+            iframeDocument.elementFromPoint(middleX, middleY).dispatchEvent(clickEvent);
+            if ((iframeDocument.querySelector('video') || (id && iframeDocument.querySelector('#' + id))) && !noRestart) {
+                iframeDocument.querySelector('video').currentTime = 40;
+                noRestart = true;
+            } else if (!noRestart) {
+                setTimeout(() => {
+                    clickInMiddleOfAllIframes(document, id);
+                }, 500);
+            }
+        } else if (!noRestart) {
+            setTimeout(() => {
+                clickInMiddleOfAllIframes(document, id);
+            }, 500);
+        }
+    }
+</script>
+
+</html>

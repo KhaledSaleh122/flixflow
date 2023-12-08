@@ -2,6 +2,7 @@ import { getIMDB_M, getMovieById } from './movie.js';
 import { URLSearchParams } from 'url';
 import unzipper from 'unzipper';
 var counterBrowsers = 0;
+var browsers = [];
 ////
 import * as url from 'url';
 const __filename = url.fileURLToPath(import.meta.url);
@@ -9,7 +10,7 @@ const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 /////
 import dotenv from 'dotenv'
 dotenv.config();
-
+import { createServer } from "http";
 /*puppeteer*/
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
@@ -20,6 +21,7 @@ import { getIMDB, getTvShowById } from './tv.js';
 import { VideoModel } from '../model/video.js';
 import { Sub } from '../model/subtitle.js';
 import { decrypt, encrypt } from './video_handler.js';
+import { Server } from 'socket.io';
 
 
 const subHeaders = {
@@ -59,29 +61,35 @@ export async function getTargetVideo(req, res) {
                 if (!data.list) { throw 'couldn\'t find the target :: 3' }
                 let serverData = await serverHandler.serverOne(data, info);
                 data['subtitle'] = serverData.subtitle;
-                saveData(info,data);
-                res.status(200).json({ list: encrypt(data.list), subtitle: serverData.subtitle.map((el) => { el.file = encrypt(el.file); return el }) });
+                saveData(info, data);
+                res.status(200).json(
+                    {
+                        list: encrypt(data.list),
+                        url: encrypt(data.list.substring(0, data.list.lastIndexOf('/') + 1)),
+                        subtitle: serverData.subtitle.map((el) => { el.file = encrypt(el.file); return el })
+                    }
+                );
                 break;
             }
-            case 2:{
+            case 2: {
                 data = await getVideo(info);
                 if (!data.list) { throw 'couldn\'t find the target :: 6' }
-                saveData(info,data);
-                res.status(200).json({list:encrypt(data.list)});
+                saveData(info, data);
+                res.status(200).json({ list: encrypt(data.list), url: encrypt(data.list.substring(0, data.list.lastIndexOf('/') + 1)) });
                 break;
             }
-            case 3:{
+            case 3: {
                 data = await getVideo(info);
                 if (!data.list) { throw 'couldn\'t find the target :: 5' }
-                saveData(info,data);
-                res.status(200).json({list:encrypt(data.list)});
+                saveData(info, data);
+                res.status(200).json({ list: encrypt(data.list), url: encrypt(data.list.substring(0, data.list.lastIndexOf('/') + 1)) });
                 break;
             }
-            case 4:{
+            case 4: {
                 data = await getVideo(info);
                 if (!data.list) { throw 'couldn\'t find the target :: 5' }
-                saveData(info,data);
-                res.status(200).json({list:encrypt(data.list)});
+                saveData(info, data);
+                res.status(200).json({ list: encrypt(data.list), url: encrypt(data.list.substring(0, data.list.lastIndexOf('/') + 1)) });
                 break;
             }
             default: {
@@ -94,12 +102,12 @@ export async function getTargetVideo(req, res) {
         res.status(500).json({ error: "Couldn't find source video, Try again!", statusCode: 500 });
     }
 }
-async function saveData(info,data){
-    await VideoModel.findOneAndUpdate({ tmdbId: info.id, season: info.season || 0, episode: info.episode || 0, server:info.server },
+async function saveData(info, data) {
+    await VideoModel.findOneAndUpdate({ tmdbId: info.id, season: info.season || 0, episode: info.episode || 0, server: info.server },
         {
             subtitle: data['subtitle'],
             list: data['list'],
-            type:info.type,
+            type: info.type,
         },
         {
             upsert: true,
@@ -125,7 +133,7 @@ async function sendVideoError(info) {
 const serversHandler = () => {
     const info = {};
     info['serverOne'] = async (data, info) => {
-        const dataToReturn = {subtitle:[]};
+        const dataToReturn = { subtitle: [] };
         if (data['subtitle']) {
             dataToReturn['subtitle'] = await (await fetch(data['subtitle'])).json();
         }
@@ -134,31 +142,80 @@ const serversHandler = () => {
     return info;
 }
 //getVideo({type:"movie",id:238,season:1,episode:1,server:2});
+const server = createServer();
+server.listen(4003);
+const io = new Server(server, {
+    cookie: true,
+
+    cors: {
+      origin: `${process.env.SERVERURL}:4000`, // Replace with your domain
+      methods: ['GET', 'POST'],
+      credentials: true,
+
+    }
+});
+let connectedClients = {};
+
+io.on('connection', (socket) => {
+    console.log('A user connected', socket.id);
+    const id = browsers.shift();
+    connectedClients[id] = socket;
+    socket.on('disconnect', () => {
+        console.log('User disconnected', socket.id);
+        delete connectedClients[id];
+    });
+});
+
 async function getVideo(info) {
     try {
         return await new Promise(async (resolve, reject) => {
-            const browser = await createBrowser().catch(err => reject(err))
+            const browser = await createBrowser().catch(err => reject(err));
+            const browserid = Math.random()*1000;
+            const index = browsers.push(browserid)-1;
+            console.log(browsers);
             try {
-                
+                let tries = 0;
+                while(!connectedClients[browserid] && tries < 5){
+                    await new Promise((resolve)=>{setTimeout(resolve,3000)});
+                    console.log('connect : try [',tries,']');
+                    tries++;
+                }
+                if(!connectedClients[browserid]){throw new Error("Couldn't Connect to target server try again.")}
                 const timeout = setTimeout(async () => {
                     if (browser) { await browser.close() };
                     counterBrowsers--;
                     reject('couldn\'t find the target :: 2');
                     //sendVideoError(info);
-                }, 30000 )
+                }, 10000)
+                const socket = connectedClients[browserid];
+                if (info.type === 'tv') {
+                    info.imdb = (await getIMDB(info.id)).result;
+                } else {
+                    info.imdb = (await getIMDB_M(info.id)).result;
+                }
+                socket.emit('data',info);
+                socket.on('data',async(info)=>{
+                    resolve(info);
+                    socket.disconnect(true);
+                    counterBrowsers--;
+                    if (browser) { await browser.close() };
+                })
+                socket.on("errorHandler",info=>{
+
+                })
+                
+                /*
                 let imdb;
                 if (info.type === 'tv') {
                     imdb = (await getIMDB(info.id)).result;
                 } else {
                     imdb = (await getIMDB_M(info.id)).result;
                 }
-                
                 const page = await browser.newPage();
                 await page.goto('http://localhost:4000/', { waitUntil: 'domcontentloaded' });
-                
-                const waiting = await page.evaluate(async (type, id, s, e, server,imdb) => {
+                const waiting = await page.evaluate(async (type, id, s, e, server, imdb) => {
                     return await new Promise((reslove, reject) => {
-                        const info = { type, id, s, e, server,imdb }
+                        const info = { type, id, s, e, server, imdb }
                         window.postMessage({ type: 'data_from_web', data: info }, '*');
                         //setInterval(() => console.log('still here'), 1000);
                         //reslove('done');
@@ -169,12 +226,12 @@ async function getVideo(info) {
                             }
                         });
                     })
-                }, info.type, info.id, info.season, info.episode, info.server,imdb);
-                
+                }, info.type, info.id, info.season, info.episode, info.server, imdb);
+
                 await page.close();
                 let reqData;
-                const getDataInterval = setInterval(async()=>{
-                    if(!browser.isConnected){clearInterval(getDataInterval);return;}
+                const getDataInterval = setInterval(async () => {
+                    if (!browser.isConnected) { clearInterval(getDataInterval); return; }
                     let infoPage;
                     try {
                         infoPage = await browser.newPage();
@@ -194,8 +251,8 @@ async function getVideo(info) {
                         resolve(JSON.parse(reqData));
                         return;
                     }
-                },3000);
-            
+                }, 3000);
+                */
             } catch (error) {
                 if (browser) { await browser.close() };
                 reject(error);
@@ -261,10 +318,9 @@ async function createBrowser() {
     ];
     */
     const args = [
-        '--remote-debugging-port=4003',
         '--disable-setuid-sandbox',
         '--no-sandbox',
-        `--user-data-dir="${__dirname+ '/../temp/'}"`,
+        `--user-data-dir="${__dirname + '/../temp/'}"`,
         '--disable-web-security',
         '--disable-site-isolation-trials',
         `--load-extension=${__dirname + '/../extention/'},${__dirname + '/../ublock/'}`,
@@ -277,9 +333,9 @@ async function createBrowser() {
         {
             executablePath: process.env.GOOGLEPATH,
             ignoreHTTPSErrors: false,
-            headless: 'new',
+            //headless: 'new',
             //devtools:true,
-            //headless: false,
+            headless: false,
             args,
         }
     )
@@ -294,8 +350,8 @@ export async function isVideoInfoExists(req, res, next) {
                 tmdbId: req.params.tmdbId,
                 server: req.params.server,
                 type: req.params.type,
-                season: (req.params.season ||0),
-                episode: (req.params.episode||0)
+                season: (req.params.season || 0),
+                episode: (req.params.episode || 0)
             }, "list subtitle error"
         );
         if (!videoInfo) {
@@ -312,7 +368,10 @@ export async function isVideoInfoExists(req, res, next) {
             next();
             return;
         }
-        if (videoInfo.list) { videoInfo.list = encrypt(videoInfo.list); }
+        if (videoInfo.list) { 
+            videoInfo.url = encrypt(videoInfo.list.substring(0, videoInfo.list.lastIndexOf('/') + 1)) 
+            videoInfo.list = encrypt(videoInfo.list);
+        }
         //if (videoInfo.list) { videoInfo.list = videoInfo.list; }
         if (videoInfo.subtitle) { videoInfo.subtitle.map((el) => { el.file = encrypt(el.file); return el }) };
         res.status(200).json(videoInfo);
@@ -361,19 +420,19 @@ export async function getSubtitle(req, res) {
                     imdb = imdb.split('tt')[1];
                 }
                 if (!imdb) { throw 'IMDB id Error' }
-                
+
                 //const page = (await browser.pages())[0];
-                
+
                 //await page.goto(`https://vidsrc.stream/prorcp/ZGE5ZjcwZTI2ODQyNTgwNWNlMjQ0MGQzMTE5ZTEwZmM6YW1KbGVrVTBSalJJTkU5R1ZUQndRMHh4Y25adWMzWk5aemxKT1hwTmVrZDVXVzlZYW5VeGJHcHplVU4wY0ZRck0xWnFjalIyV1VkRFRIbHlWWGxXTmxZNVpGTkZRa1pGVUhKRFZ6Vm5XbTFyZDFSeVMyaEVlWE4zTmpscFlua3JPRzVyWTNCQ1ZrbHBjalJvUXpkdUx6QTFOalpEU0VsRFZrWXhZM0U1UjJSd0wxa3lUVzB3Vm5CbVUyUmxhbWxKVDFjMlpURnhZekYwY201cWNWaG9ORGhVWTJ4VFNYcDNVbU5YUjNNNVJIQlBlREJJUm0xNVpqUkhUbU50YTJRclNITjBRbTl3VFVOc00zcG9ja1JhVHpacU5XNXlSR2xpVkhWcGEzSm1ibXRwTDJWNk0xbHhWMmNyYml0TFdVbFdaRmQyWmpkb04ySjRjVVZ3U3prMlRYQnlaSGxaU0ZOU1EzSnVTV3RXWmxKSmF6UjVVemRaYVRWRWFXSmlXRTlNTDAweWJIWm1MMnhUUkZKa04wNVNkakJwTldaS2RERlNUV3AyYW5KWWNWZEdkVFJ0UWtOWGQzVjROMVZwVmxVNVVtSXpRV3RNUTJKQk0wVnRXRFpOTTJ0NWFXSndXa3MzTlhGaWVVZEdiVVpWUmpaalVVaGpZWEoyUzJ0bE9VNVpibVphTkZNeVNqZGxOVEUxYm1Vd1dHTjZMMWRLZG5FNUswOUZabTl5TkdGbllWZFJZUzh6VTNWNVpFSlJOUzh2TjA0NFp6QkJWM3BwT0dGWlFWQjBTa2xLYldrMlEwZEVRekl3V25sQmN6WnhjME14YzBOWWJuRjVUWGhCWVVGS1NTc3phbmh6YWxSMWNsZGplUzlxT1VoWlQwWnpjbXRCVlVkUFUyaEpVazVTYVc5NVJ6RnBPRkZaVnprM1pGQkdjSGhxVGk5SldrZzJRbnAzU25ZM1NtdElTR3hJYkZOb1RFMVNRVVppV1hJclowZDNhRkU0Y25scVpHdEpZMFpMZUhwVmNHTTBaM0JMZGpGd1RuRXJUbXRZYUV0alVUMDk-`);
                 let fetchURL;
-                if(req.params.type === 'tv'){
+                if (req.params.type === 'tv') {
                     fetchURL = `https://rest.opensubtitles.org/search/episode-${req.params.episode}/imdbid-${imdb}/season-${req.params.season}`
-                }else{
+                } else {
                     fetchURL = `https://rest.opensubtitles.org/search/imdbid-${imdb}`
                 }
-                const jsonData = (await(await fetch(fetchURL, {
+                const jsonData = (await (await fetch(fetchURL, {
                     method: 'GET',
-                   headers:subHeaders,
+                    headers: subHeaders,
                 })).json());
                 //console.log(jsonData[0]);
                 resolve(jsonData);
@@ -396,12 +455,12 @@ export async function getSubtitle(req, res) {
             }
         ).exec();
         //console.log(id);
-        const targetData = promis.filter((el)=>el.SubLanguageID === id);
-        if(targetData.length === 0){throw new Error(`Couldn't find any subtitle for ${lang}!`)}
-        const returnData = (targetData.map((el)=>{return {list:encrypt(el.SubDownloadLink),encode:el.SubEncoding}})).slice(0,17);
+        const targetData = promis.filter((el) => el.SubLanguageID === id);
+        if (targetData.length === 0) { throw new Error(`Couldn't find any subtitle for ${lang}!`) }
+        const returnData = (targetData.map((el) => { return { list: encrypt(el.SubDownloadLink), encode: el.SubEncoding } })).slice(0, 17);
         res.status(200).json(returnData);
     } catch (err) {
-        //console.log(err);
+        console.log(err);
         res.status((err && err.statusCode) || 500).json({ error: err.toString(), statusCode: err.statusCode || 500 });
     }
 }
@@ -416,7 +475,7 @@ const testSubtitleMovie = async (url) => {
                     returnURL.push(url[i]);
                 }
             } catch (error) {
-               // console.log(error);
+                // console.log(error);
             }
             if (i === url.length - 1) {
                 resolve(returnURL);
@@ -436,9 +495,9 @@ export async function isSubtitleExist(req, res, next) {
         //console.log(req.params.tmdbId,req.params.type,req.params.season||0,req.params.episode || 0);
         //console.log(subInfo);
         if (!subInfo) { next(); return; }
-        const targetData = subInfo.data.filter((el)=>el.SubLanguageID === req.params.id);
-        if(targetData.length === 0){throw new Error(`Couldn't find any subtitle for ${req.params.lang}!`)}
-        const returnData = (targetData.map((el)=>{return {list:encrypt(el.SubDownloadLink),encode:el.SubEncoding}})).slice(0,17);
+        const targetData = subInfo.data.filter((el) => el.SubLanguageID === req.params.id);
+        if (targetData.length === 0) { throw new Error(`Couldn't find any subtitle for ${req.params.lang}!`) }
+        const returnData = (targetData.map((el) => { return { list: encrypt(el.SubDownloadLink), encode: el.SubEncoding } })).slice(0, 17);
         res.status(200).json(returnData);
     } catch (err) {
         res.status(err.statusCode || 500).json({ error: err.toString(), statusCode: err.statusCode || 500 });

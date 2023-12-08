@@ -9,6 +9,7 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { createServer } from "http";
 import rateLimit from 'express-rate-limit'
+
 ////
 import * as url from 'url';
 const __filename = url.fileURLToPath(import.meta.url);
@@ -27,6 +28,9 @@ const limiter = rateLimit({
 
 //express app
 const app = express();
+
+
+
 app.use(express.static('dist'));
 const httpServer =  createServer(app);
 app.use(limiter);
@@ -95,6 +99,7 @@ import { videoRouter } from "./routers/video.js";
 import { subRouter } from "./routers/subtitle.js";
 import { saveContinouWatch } from "./controller/continou.js";
 import socketScript from "./controller/socketHandler.js";
+import axios from "axios";
 
 //use
 socketScript(httpServer);
@@ -114,8 +119,15 @@ app.get('/ping',(req,res)=>{
   res.status(200).json({result:'done'});
 })
 
+app.get('/finder',(req,res)=>{
+  res.sendFile(__dirname+'/extention/index.html');
+  return;
+})
+
 app.use(function(req, res, next) {
     res.sendFile(__dirname+'/dist/index.html');
     //res.status(404).json({error:"_Resource not found."})
 });
 
+
+///////////////////////////test only
