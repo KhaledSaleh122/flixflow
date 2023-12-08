@@ -32,6 +32,9 @@ export default function socketScript(server) {
           socket.emit('message', { data: `Error:${error.message}`, redirect: false });
         }
       })
+      socket.on('removeConnection',()=>{
+        disconnectUser(socket);
+      })
       videoStatHandler(socket);
       collectReadyHandler(socket);
     } catch (error) {
@@ -96,6 +99,7 @@ export default function socketScript(server) {
           }
         }
         if (socket.user && socket.user._id && emitCounts[socket.user._id] && emitCounts[socket.user._id].socketId === socket.id) {
+          console.log('user data removed');
           delete emitCounts[socket.user._id];
         }
       } catch (error) {
