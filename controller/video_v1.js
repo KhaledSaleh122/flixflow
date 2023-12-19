@@ -154,16 +154,11 @@ const io = new Server(server, {
 
     }
 });
-let connectedClients = {};
 
 io.on('connection', (socket) => {
     console.log('A user connected', socket.id);
-    const id = browsers.shift();
-    connectedClients[id] = socket;
-    socket.on('disconnect', () => {
-        console.log('User disconnected', socket.id);
-        delete connectedClients[id];
-    });
+    const finder = browsers.shift();
+    finder(socket);
 });
 
 async function getVideo(info) {
@@ -171,92 +166,30 @@ async function getVideo(info) {
         return await new Promise(async (resolve, reject) => {
             const browser = await createBrowser().catch(err => reject(err));
             const browserid = Math.random()*1000;
-            const index = browsers.push(browserid)-1;
-            console.log(browsers);
-            try {
-                let tries = 0;
-                while(!connectedClients[browserid] && tries < 5){
-                    await new Promise((resolve)=>{setTimeout(resolve,3000)});
-                    console.log('connect : try [',tries,']');
-                    tries++;
-                }
-                if(!connectedClients[browserid]){throw new Error("Couldn't Connect to target server try again.")}
-                const timeout = setTimeout(async () => {
-                    if (browser) { await browser.close() };
-                    counterBrowsers--;
-                    reject('couldn\'t find the target :: 2');
-                    //sendVideoError(info);
-                }, 10000)
-                const socket = connectedClients[browserid];
-                if (info.type === 'tv') {
-                    info.imdb = (await getIMDB(info.id)).result;
-                } else {
-                    info.imdb = (await getIMDB_M(info.id)).result;
-                }
-                socket.emit('data',info);
-                socket.on('data',async(info)=>{
-                    resolve(info);
-                    socket.disconnect(true);
-                    counterBrowsers--;
-                    if (browser) { await browser.close() };
-                })
-                socket.on("errorHandler",info=>{
-
-                })
-                
-                /*
-                let imdb;
-                if (info.type === 'tv') {
-                    imdb = (await getIMDB(info.id)).result;
-                } else {
-                    imdb = (await getIMDB_M(info.id)).result;
-                }
-                const page = await browser.newPage();
-                await page.goto('http://localhost:4000/', { waitUntil: 'domcontentloaded' });
-                const waiting = await page.evaluate(async (type, id, s, e, server, imdb) => {
-                    return await new Promise((reslove, reject) => {
-                        const info = { type, id, s, e, server, imdb }
-                        window.postMessage({ type: 'data_from_web', data: info }, '*');
-                        //setInterval(() => console.log('still here'), 1000);
-                        //reslove('done');
-                        window.addEventListener('message', function (event) {
-                            if (event.data.type === "close_the_page") {
-                                reslove('done');
-                                return;
-                            }
-                        });
-                    })
-                }, info.type, info.id, info.season, info.episode, info.server, imdb);
-
-                await page.close();
-                let reqData;
-                const getDataInterval = setInterval(async () => {
-                    if (!browser.isConnected) { clearInterval(getDataInterval); return; }
-                    let infoPage;
-                    try {
-                        infoPage = await browser.newPage();
-                    } catch (error) {
-                        clearInterval(getDataInterval);
-                        return;
+            const finder = async(socket) =>{
+                try {
+                    if (info.type === 'tv') {
+                        info.imdb = (await getIMDB(info.id)).result;
+                    } else {
+                        info.imdb = (await getIMDB_M(info.id)).result;
                     }
-                    await infoPage.goto('http://localhost:4000');
-                    reqData = await infoPage.evaluate(el => localStorage.getItem('data'));
-                    await infoPage.close();
-                    if (reqData) {
-                        clearTimeout(timeout);
-                        clearInterval(getDataInterval);
+                    socket.emit('data',info);
+                    socket.on('data',async(info)=>{
+                        resolve(info);
+                        socket.disconnect(true);
                         counterBrowsers--;
                         if (browser) { await browser.close() };
-                        console.log(reqData);
-                        resolve(JSON.parse(reqData));
-                        return;
-                    }
-                }, 3000);
-                */
-            } catch (error) {
-                if (browser) { await browser.close() };
-                reject(error);
+                    })
+                    socket.on("errorHandler",info=>{
+    
+                    })
+                } catch (error) {
+                    if (browser) { await browser.close() };
+                    reject(error);
+                }
             }
+            browsers.push(finder)
+            console.log(browsers);
         });
     } catch (error) {
         counterBrowsers--;

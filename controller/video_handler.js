@@ -90,6 +90,7 @@ export const download_handler = async (req, res) => {
         //res.status(200);
     } catch (error) {
         console.log(error);
+        console.log(await resetVideoData(decrypt(req.params.fileMainUrl)));
         res.status(404);
     }
 }
@@ -146,6 +147,7 @@ const downloadList_handler = async (req, res) => {
         // if(!error.response || [403,404].find((el)=>el===error.response.status)){
         //console.log(await resetVideoData(decrypt(req.params.fileUrl)));
         // }
+        console.log(await resetVideoData(decrypt(req.params.fileUrl)));
         res.status(500).json({ error: "Error getting list,restart the page!" })
     }
 }
@@ -272,3 +274,7 @@ export function decrypt(encryptedData) {
     decrypted += decipher.final('utf8');
     return decrypted;
 }
+
+
+
+
