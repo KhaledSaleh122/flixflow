@@ -4,6 +4,8 @@
 
 Welcome to FlixFlow, an innovative online streaming website crafted for a modern audience. This platform is not just about streaming movies; it's about creating an interactive community of movie enthusiasts. With a blend of robust backend technologies and a user-centric frontend, we offer a seamless movie-watching experience.
 
+![Project Homepage](https://i.imgur.com/Ffm6ha9.png)
+
 ### Key Technologies
 
 - **Backend**: Powered by Node.js and Express for performance and MongoDB for data storage.
