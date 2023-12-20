@@ -9,7 +9,7 @@ Welcome to FlixFlow, an innovative online streaming website crafted for a modern
 ![Project Signinpage](https://i.imgur.com/efJmyTU.png)
 ![Project Signuppage](https://i.imgur.com/iiXEETJ.png)
 ![Project Favoritepage](https://i.imgur.com/uv22Qqz.png)
-![Project ContinueWatchingpage](blob:https://imgur.com/23831b37-ab7b-4c71-a1a2-4c46ac0c1eec)
+![Project ContinueWatchingpage](https://i.imgur.com/l7ozLkE.png)
 ![Project JoinRoompage](https://i.imgur.com/yAZJgsH.png)
 
 ### Key Technologies
