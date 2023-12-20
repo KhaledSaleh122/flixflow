@@ -5,6 +5,12 @@
 Welcome to FlixFlow, an innovative online streaming website crafted for a modern audience. This platform is not just about streaming movies; it's about creating an interactive community of movie enthusiasts. With a blend of robust backend technologies and a user-centric frontend, we offer a seamless movie-watching experience.
 
 ![Project Homepage](https://i.imgur.com/Ffm6ha9.png)
+![Project Roompage](https://i.imgur.com/YiMakr2.png)
+![Project Signinpage](https://i.imgur.com/efJmyTU.png)
+![Project Signuppage](https://i.imgur.com/iiXEETJ.png)
+![Project Favoritepage](https://i.imgur.com/uv22Qqz.png)
+![Project ContinueWatchingpage](blob:https://imgur.com/23831b37-ab7b-4c71-a1a2-4c46ac0c1eec)
+![Project JoinRoompage](https://i.imgur.com/yAZJgsH.png)
 
 ### Key Technologies
 
