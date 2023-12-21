@@ -253,7 +253,7 @@ async function createBrowser() {
     const args = [
         '--disable-setuid-sandbox',
         '--no-sandbox',
-        `--user-data-dir="${__dirname + '/../temp/'}"`,
+        `--user-data-dir="${__dirname + '/temp/'}"`,
         '--disable-web-security',
         '--disable-site-isolation-trials',
         `--load-extension=${__dirname + '/../extention/'},${__dirname + '/../ublock/'}`,
@@ -270,6 +270,7 @@ async function createBrowser() {
             //devtools:true,
             //headless: false,
             args,
+            userDataDir : __dirname + '/temp/',
         }
     )
     return brows;
