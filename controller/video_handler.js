@@ -53,11 +53,14 @@ const subHeaders = {
 //     }
 //     return info
 // }
-const download_handler_ = () => {
+const download_handler_ = (list) => {
     const info = {};
     info['serverOne'] = async (dURL,res) => {
         //const response = await axios.get(dURL);
-        https.get(dURL, (respo) => {
+        https.get(dURL, async(respo) => {
+            if(respo.statusCode !== 200){
+                console.log(await resetVideoData(decrypt(list)));
+            }
             respo.pipe(res);
         })
         //console.log(response);
@@ -65,7 +68,10 @@ const download_handler_ = () => {
     }
     info['serverTwo'] = async (dURL,res) => {
         //const response = await axios.get(dURL, { method: "GET", headers: subHeaders });
-        https.get(dURL, { method: "GET", headers: subHeaders }, (respo) => {
+        https.get(dURL, { method: "GET", headers: subHeaders }, async(respo) => {
+            if(respo.statusCode !== 200){
+                console.log(await resetVideoData(decrypt(list)));
+            }
             respo.pipe(res);
         })
         return true;
@@ -75,7 +81,7 @@ const download_handler_ = () => {
 export const download_handler = async (req, res) => {
     try {
         //console.log(req.params);
-        const downloader = download_handler_();
+        const downloader = download_handler_(req.params.fileMainUrl);
         const url = decrypt(req.params.fileMainUrl);
         const dURL = url + req.params['0'];
         let list;
