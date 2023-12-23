@@ -2,6 +2,7 @@ import { getIMDB_M, getMovieById } from './movie.js';
 import { URLSearchParams } from 'url';
 import unzipper from 'unzipper';
 var counterBrowsers = 0;
+var browserid = 0;
 var browsers = [];
 ////
 import * as url from 'url';
@@ -158,14 +159,19 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
     console.log('A user connected', socket.id);
     const finder = browsers.shift();
-    finder(socket);
+    finder.data(socket);
 });
 
 async function getVideo(info) {
+    const browser = await createBrowser().catch(err => reject(err));
+    const id = browserid++;
     try {
         return await new Promise(async (resolve, reject) => {
-            const browser = await createBrowser().catch(err => reject(err));
-            const browserid = Math.random()*1000;
+            setTimeout(async()=>{
+                reject('timeout');
+                browsers = browsers.filter((ele)=>ele.id !== id);
+                return;
+            },20000)
             const finder = async(socket) =>{
                 try {
                     if (info.type === 'tv') {
@@ -178,82 +184,31 @@ async function getVideo(info) {
                         resolve(info);
                         socket.disconnect(true);
                         counterBrowsers--;
-                        if (browser) { await browser.close() };
+                        if (browser) { await browser.close();console.log('browser',id," closed") };
                     })
                     socket.on("errorHandler",info=>{
     
                     })
                 } catch (error) {
-                    if (browser) { await browser.close() };
+                    socket.disconnect(true)
                     reject(error);
                 }
             }
-            browsers.push(finder)
+            browsers.push({ id,data :finder})
             console.log(browsers);
         });
     } catch (error) {
         counterBrowsers--;
+        if (browser) { await browser.close();console.log('browser',id," closed") };
         throw (error);
     }
 }
 /////////////////////////////////////////
-
 async function createBrowser() {
-    /*
-    const args = [
-        '--disable-background-timer-throttling',
-        '--disable-breakpad',
-        '--disable-client-side-phishing-detection',
-        '--disable-cloud-import',
-        '--disable-default-apps',
-        '--disable-dev-shm-usage',
-        '--disable-extensions',
-        '--disable-gesture-typing',
-        '--disable-hang-monitor',
-        '--disable-infobars',
-        '--disable-notifications',
-        '--disable-offer-store-unmasked-wallet-cards',
-        '--disable-offer-upload-credit-cards',
-        '--disable-popup-blocking',
-        '--disable-print-preview',
-        '--disable-prompt-on-repost',
-        '--disable-setuid-sandbox',
-        '--disable-speech-api',
-        '--disable-sync',
-        '--disable-tab-for-desktop-share',
-        '--disable-translate',
-        '--disable-voice-input',
-        '--disable-wake-on-wifi',
-        '--disk-cache-size=33554432',
-        '--enable-async-dns',
-        '--enable-simple-cache-backend',
-        '--enable-tcp-fast-open',
-        '--enable-webgl',
-        '--hide-scrollbars',
-        '--ignore-gpu-blacklist',
-        '--media-cache-size=33554432',
-        '--metrics-recording-only',
-        '--mute-audio',
-        '--no-default-browser-check',
-        '--no-first-run',
-        '--no-pings',
-        '--no-sandbox',
-        '--no-zygote',
-        '--password-store=basic',
-        '--prerender-from-omnibox=disabled',
-        '--use-gl=swiftshader',
-        '--use-mock-keychain',
-        '--memory-pressure-off',
-        '--start-maximized',
-        '--disable-site-isolation-trials',
-        `--disable-extensions-except=${__dirname + '/../extention/'}`,
-        `--load-extension=${__dirname + '/../extention/'}`,
-    ];
-    */
     const args = [
         '--disable-setuid-sandbox',
         '--no-sandbox',
-        `--user-data-dir="${__dirname + '/../../temp/'}"`,
+//        `--user-data-dir="${__dirname + '/../../temp/'}"`,
         '--disable-web-security',
         '--disable-site-isolation-trials',
         `--load-extension=${__dirname + '/../extention/'},${__dirname + '/../ublock/'}`,
@@ -270,7 +225,7 @@ async function createBrowser() {
             //devtools:true,
             //headless: false,
             args,
-            userDataDir : __dirname + '/../../temp/',
+            //userDataDir : __dirname + '/../../temp/',
         }
     )
     return brows;
