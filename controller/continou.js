@@ -47,23 +47,34 @@ export async function saveContinouWatch(req, res,next) {
                         //console.log(v);
                         const tmdbData = (v.type ==="movie" ? await getMovieById(Number(v.id)):await getTvShowById(Number(v.id)));
                         if(tmdbData && Number(tmdbData.id)){
-                            await Con.findOneAndUpdate({
-                                tmdbId: v.id,userId:req.user._id,
-                                $or:[{episode:{$lte:v.episode},season:v.season},{season:{$lt:v.season}}]
-                            },
-                            {
-                                episode:v.episode,
-                                season :v.season,
-                                time:v.time,
-                                type:v.type,
-                                name: tmdbData.name || tmdbData.title,
-                                poster_path:tmdbData.poster_path
-                            },
-                            {
-                                upsert: true,
-                                new: true
+                            const data = await Con.findOne({tmdbId: v.id,userId:req.user._id});
+                            let update = false;
+                            if(!data){
+                                update = true;
+                            }else if(data.type === "movie"){update= true}
+                            else if(data.type === "tv" && data.season === v.season && data.episode <= v.episode){
+                                update=true
+                            }else if(data.type === "tv" && data.season < v.season){
+                                update= true
                             }
-                            )
+                            if(update){
+                                await Con.findOneAndUpdate({
+                                        tmdbId: v.id,userId:req.user._id,
+                                    },
+                                    {
+                                        episode:v.episode,
+                                        season :v.season,
+                                        time:v.time,
+                                        type:v.type,
+                                        name: tmdbData.name || tmdbData.title,
+                                        poster_path:tmdbData.poster_path
+                                    },
+                                    {
+                                        upsert: true,
+                                        new: true
+                                    }
+                                )
+                            }
                         }
                     }
                 })
